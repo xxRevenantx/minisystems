@@ -16,3 +16,5 @@ Livewire.on('swal', (data) => {
           title: data[0].title,
       })
 })
+
+

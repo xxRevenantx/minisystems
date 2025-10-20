@@ -9,7 +9,7 @@
     x-on:livewire-upload-finish="isUploading = false; etaText = ''"
     x-on:livewire-upload-error="isUploading = false; etaText = ''"
     x-on:livewire-upload-progress="progress = $event.detail.progress"
-    class="max-w-4xl mx-auto"
+    class="w-full mx-auto max-h-[100vh] overflow-auto"
 >
     <div class="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-neutral-200 dark:border-neutral-800 bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600 text-white">

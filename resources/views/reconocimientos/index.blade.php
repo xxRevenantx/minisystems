@@ -6,7 +6,9 @@
                 <p class="mt-1 text-sm text-neutral-600 dark:text-neutral-300">{{ __('Gestione los reconocimientos aquí.') }}</p>
             </header>
 
-            <livewire:reconocimientos.imagenes-reconocimientos />
+            <livewire:reconocimientos.creacion-reconocimientos  />
         </section>
     </div>
+
+
 </x-layouts.app>

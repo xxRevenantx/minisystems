@@ -13,6 +13,7 @@ class CreacionReconocimientos extends Component
 
     public function render()
     {
-        return view('livewire.reconocimientos.creacion-reconocimientos');
+        $reconocimientosImagenes = \App\Models\ReconocimientoImagen::all();
+        return view('livewire.reconocimientos.creacion-reconocimientos', compact('reconocimientosImagenes'));
     }
 }
