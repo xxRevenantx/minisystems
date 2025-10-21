@@ -9,4 +9,19 @@ class Reconocimiento extends Model
 {
     /** @use HasFactory<\Database\Factories\ReconocimientoFactory> */
     use HasFactory;
+
+    
+
+    protected $fillable = [
+        'plantilla_id',
+        'reconocimiento_a',
+        'lugar_obtenido',
+        'descripcion',
+        'fecha',
+    ];
+
+     public function directivos()
+    {
+        return $this->belongsToMany(Directivo::class , 'directivo_reconocimiento');
+    }
 }

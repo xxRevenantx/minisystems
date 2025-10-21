@@ -11,14 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('reconocimientos', function (Blueprint $table) {
+        Schema::create('directivos', function (Blueprint $table) {
             $table->id();
-            $table->string('reconocimiento_a');
-            $table->string('lugar_obtenido')->nullable();
-            $table->text('descripcion')->nullable();
-            $table->date('fecha')->nullable();
-
-
+            $table->string('titulo');
+            $table->string('nombre');
+            $table->string('cargo')->nullable();
             $table->timestamps();
         });
     }
@@ -28,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('reconocimientos');
+        Schema::dropIfExists('directivos');
     }
 };

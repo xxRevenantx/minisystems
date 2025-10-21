@@ -20,5 +20,7 @@ class DatabaseSeeder extends Seeder
             'email' => 'minisystem@system.com',
             'password' => bcrypt('minisystem123'),
         ]);
+
+        $this->call(DirectivoSeeder::class);
     }
 }
