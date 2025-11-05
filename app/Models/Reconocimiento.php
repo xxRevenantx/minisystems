@@ -10,15 +10,20 @@ class Reconocimiento extends Model
     /** @use HasFactory<\Database\Factories\ReconocimientoFactory> */
     use HasFactory;
 
-    
+
 
     protected $fillable = [
-        'plantilla_id',
+        'reconocimiento_imagen_id',
         'reconocimiento_a',
         'lugar_obtenido',
         'descripcion',
         'fecha',
     ];
+
+    public function reconocimientoImagen()
+    {
+        return $this->belongsTo(ReconocimientoImagen::class, 'reconocimiento_imagen_id');
+    }
 
      public function directivos()
     {

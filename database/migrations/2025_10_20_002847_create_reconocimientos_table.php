@@ -13,10 +13,14 @@ return new class extends Migration
     {
         Schema::create('reconocimientos', function (Blueprint $table) {
             $table->id();
-            $table->string('reconocimiento_a');
+            $table->unsignedBigInteger('reconocimiento_imagen_id')->nullable();
+            $table->string('reconocimiento_a')->nullable();
             $table->string('lugar_obtenido')->nullable();
             $table->text('descripcion')->nullable();
             $table->date('fecha')->nullable();
+
+
+            $table->foreign('reconocimiento_imagen_id')->references('id')->on('reconocimiento_imagenes')->onDelete('cascade');
 
 
             $table->timestamps();

@@ -15,4 +15,10 @@ class ReconocimientoImagen extends Model
         'imagen',
         'descripcion',
     ];
+
+    public function reconocimientos()
+    {
+        return $this->hasMany(Reconocimiento::class, 'reconocimiento_imagen_id');
+    }
+
 }

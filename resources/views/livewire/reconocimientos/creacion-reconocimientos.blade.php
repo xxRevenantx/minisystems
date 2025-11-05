@@ -51,8 +51,8 @@
               <label class="absolute left-2 top-2 z-10 inline-flex items-center gap-2">
                 <input
                   type="radio"
-                  name="reconocimiento_id"
-                  wire:model="reconocimiento_id"
+                  name="reconocimiento_imagen_id"
+                  wire:model="reconocimiento_imagen_id"
                   value="{{ $plantilla->id }}"
                   class="h-4 w-4 rounded border-neutral-300 text-indigo-600 focus:ring-indigo-500"
                 />
@@ -195,6 +195,7 @@
 
     {{-- MOSTRAR EN UNA TABLA --}}
 
+    <livewire:reconocimientos.mostrar-reconocimientos />
 
 
 </div>

@@ -7,6 +7,7 @@ use App\Livewire\Settings\TwoFactor;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 use App\Http\Controllers\ImagesController;
+use App\Http\Controllers\PDFController;
 use App\Http\Controllers\ReconocimientoController;
 
 Route::get('/', function () {
@@ -26,6 +27,7 @@ Route::middleware(['auth'])->group(function () {
     // RUTA RECONOCIMIENTO
     Route::get('reconocimiento', [ReconocimientoController::class, 'index'])->name('reconocimiento');
     Route::get('reconocimiento/imagenes', [ReconocimientoController::class, 'imagenes'])->name('reconocimiento.imagenes');
+    Route::get('reconocimiento/{id}', [PDFController::class, 'reconocimiento'])->name('reconocimiento.pdf');
 
 
 

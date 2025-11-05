@@ -12,7 +12,7 @@ class CreacionReconocimientos extends Component
 {
     use WithFileUploads;
 
-    public $reconocimiento_id = null;   // plantilla seleccionada (radio)
+    public $reconocimiento_imagen_id = null;   // plantilla seleccionada (radio)
     public $reconocimiento = '';        // "Reconocimiento a"
     public $descripcion = '';           // HTML o texto desde TinyMCE
     public $lugar_obtenido = null;      // opcional
@@ -20,7 +20,7 @@ class CreacionReconocimientos extends Component
     public $directivos = [];            // checkboxes
 
     protected $rules = [
-        'reconocimiento_id' => 'required|integer|exists:reconocimiento_imagenes,id', // <- usa la tabla correcta de plantillas
+        'reconocimiento_imagen_id' => 'required|integer|exists:reconocimiento_imagenes,id', // <- usa la tabla correcta de plantillas
         'reconocimiento'    => 'required|string|max:255',
         'descripcion'       => 'required|string',
         'lugar_obtenido'    => 'nullable|string|max:255',
@@ -30,7 +30,7 @@ class CreacionReconocimientos extends Component
     ];
 
     protected $messages = [
-        'reconocimiento_id.required' => 'Debes seleccionar una plantilla de reconocimiento.',
+        'reconocimiento_imagen_id.required' => 'Debes seleccionar una plantilla de reconocimiento.',
         'reconocimiento.required'    => 'El campo "Reconocimiento a" es obligatorio.',
         'descripcion.required'       => 'La descripción es obligatoria.',
         'fecha.required'             => 'La fecha es obligatoria.',
@@ -39,7 +39,7 @@ class CreacionReconocimientos extends Component
     ];
 
     protected $validationAttributes = [
-        'reconocimiento_id' => 'plantilla de reconocimiento',
+        'reconocimiento_imagen_id' => 'plantilla de reconocimiento',
         'reconocimiento'    => 'Reconocimiento a',
         'descripcion'       => 'descripción',
         'lugar_obtenido'    => 'lugar obtenido',
@@ -51,8 +51,10 @@ class CreacionReconocimientos extends Component
     {
         $this->validate();
 
+        // dd( $this->reconocimiento_id );
+
         $rec = Reconocimiento::create([
-            'reconocimiento_id' => $this->reconocimiento_id, // si tu relación guarda la plantilla
+            'reconocimiento_imagen_id' =>        $this->reconocimiento_imagen_id, // si tu relación guarda la plantilla
             'reconocimiento_a'         => $this->reconocimiento,
             'descripcion'              => $this->descripcion,
             'lugar_obtenido'           => $this->lugar_obtenido,
@@ -68,9 +70,11 @@ class CreacionReconocimientos extends Component
             'position' => 'top-end',
         ]);
 
+        $this->dispatch('reconocimientoCreado');
+
         // Reset completo
         $this->reset([
-            'reconocimiento_id',
+            'reconocimiento_imagen_id',
             'reconocimiento',
             'descripcion',
             'lugar_obtenido',
