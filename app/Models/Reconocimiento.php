@@ -29,4 +29,6 @@ class Reconocimiento extends Model
     {
         return $this->belongsToMany(Directivo::class , 'directivo_reconocimiento');
     }
+
+
 }

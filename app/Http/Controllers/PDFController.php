@@ -10,7 +10,7 @@ class PDFController extends Controller
 {
      public function reconocimiento($id){
 
-        $reconocimiento = Reconocimiento::find($id);
+        $reconocimiento = Reconocimiento::with('reconocimientoImagen', 'directivos')->find($id);
 
         if (!$reconocimiento) {
             abort(404);
@@ -20,8 +20,13 @@ class PDFController extends Controller
             'reconocimiento' => $reconocimiento,
         ];
 
-        $pdf = Pdf::loadView('livewire.reconocimientos.pdf.reconocimientoPDF', $data)->setPaper('letter', 'landscape');
-        return $pdf->stream("Expediente_{$reconocimiento->reconocimiento_a}.pdf");
+        $pdf = Pdf::loadView('livewire.reconocimientos.pdf.reconocimientoPDF', $data)->setPaper('letter', 'landscape')
+            ->setOption([
+                'fontDir' => public_path('/fonts'),
+                'fontCache' => public_path('/fonts'),
+                'defaultFont' => 'greatVibes'
+            ]);
+        return $pdf->stream("Reconocimiento_{$reconocimiento->reconocimiento_a}.pdf");
     }
 
 }

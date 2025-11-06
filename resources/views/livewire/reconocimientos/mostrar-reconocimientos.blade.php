@@ -1,8 +1,5 @@
 <div>
 
-    <h2 class="text-lg font-semibold text-neutral-800 dark:text-neutral-100 mb-4">
-        Reconocimientos
-    </h2>
 
     <table class="min-w-full divide-y divide-neutral-200 dark:divide-neutral-800">
         <thead class="bg-neutral-50 dark:bg-neutral-800">
@@ -13,6 +10,10 @@
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                     Descripción
                 </th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                   Autoridades
+                </th>
+
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                     Fecha
                 </th>
@@ -28,7 +29,14 @@
                         {{ $reconocimiento->reconocimiento_a }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-300">
-                        {{ $reconocimiento->descripcion }}
+                        {!! $reconocimiento->descripcion !!}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-300">
+                        @foreach($reconocimiento->directivos as $directivo)
+                            <div >
+                                {{ $directivo->titulo }} {{ $directivo->nombre }} {{ $directivo->apellido_paterno }} {{ $directivo->apellido_materno }} - {{ $directivo->cargo }}
+                            </div>
+                        @endforeach
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-300">
                         {{ \Carbon\Carbon::parse($reconocimiento->fecha)->format('d/m/Y') }}
@@ -46,7 +54,9 @@
                             </button>
                             </form>
 
-                            <button class="inline-flex items-center cursor-pointer px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+                            <button class="inline-flex items-center cursor-pointer px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+                             @click="$dispatch('abrir-modal-editar');
+                                                         Livewire.dispatch('editarModal', { id: {{ $reconocimiento->id }} }); ">
                                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                 </svg>
@@ -64,6 +74,13 @@
             @endforeach
         </tbody>
     </table>
+
+     <!-- Pagination -->
+    <div class="mt-4">
+        {{ $reconocimientos->links() }}
+    </div>
+
+    <livewire:reconocimientos.editar-reconocimiento />
 
 
 </div>
