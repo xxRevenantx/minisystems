@@ -2,7 +2,9 @@
 
 namespace App\Livewire\Reconocimientos;
 
+use App\Models\Directivo;
 use App\Models\Reconocimiento;
+use App\Models\ReconocimientoImagen;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -10,88 +12,78 @@ use Livewire\Component;
 class EditarReconocimiento extends Component
 {
     /** Campos del formulario */
+    public  $reconocimiento;
     public ?int $reconocimientoId = null;
-    public ?string $reconocimiento_a = null;
+    public ?int $reconocimiento_imagen_id;
+    public ?string $reconocimiento_a;
     public ?string $lugar_obtenido = null;   // <- lo usas en el form
     public ?string $descripcion = null;      // HTML desde TinyMCE
     public ?string $fecha = null;
+    public $directivosLista;
+    public array $directivos = [];
 
-    /** Control modal (si lo necesitas en otros lados) */
-    public bool $open = false;
 
-    /** Reglas (puedes moverlas a rules() si prefieres) */
-    protected array $rules = [
-        'reconocimiento_a' => ['required','string','min:3','max:255'],
-        'lugar_obtenido'   => ['nullable','string','max:255'],
-        'descripcion'      => ['nullable','string'], // TinyMCE HTML
-        'fecha'            => ['required','date'],
-    ];
 
-    /**
-     * Abrir modal con datos
-     */
-    #[On('editarModal')]
-    public function editarModal(int $id): void
-    {
-        $rec = Reconocimiento::findOrFail($id);
+    public function mount(){
+        $this->reconocimiento_imagen_id = $this->reconocimiento->reconocimiento_imagen_id;
+        $this->reconocimiento_a = $this->reconocimiento->reconocimiento_a;
+        $this->lugar_obtenido = $this->reconocimiento->lugar_obtenido;
+        $this->descripcion = $this->reconocimiento->descripcion;
+        $this->fecha = $this->reconocimiento->fecha;
+        $this->reconocimientoId = $this->reconocimiento->id;
 
-        $this->reconocimientoId = $rec->id;
-        $this->reconocimiento_a = $rec->reconocimiento_a;
-        $this->lugar_obtenido   = $rec->lugar_obtenido;
-        $this->descripcion      = $rec->descripcion; // HTML (NO strip_tags)
-        $this->fecha            = optional($rec->fecha)->format('Y-m-d') ?? $rec->fecha;
+              // catálogo completo para los checkboxes
+        $this->directivosLista = Directivo::orderBy('id')->get();
 
-        // Si manejas show con Alpine, avisa que ya cargó y entonces inicializas TinyMCE
-        $this->dispatch('editar-cargado');
+        // dd($this->directivosLista);
+
+        // preseleccionar lo que ya está en el pivote
+        $this->directivos = $this->reconocimiento
+            ->directivos()
+            ->pluck('directivos.id')
+            ->toArray();
+
     }
 
-    /**
-     * Guardar cambios
-     */
-    public function actualizarReconocimiento(): void
+    protected $rules = [
+        'reconocimiento_a' => ['required','string','min:3','max:255'],
+        'lugar_obtenido'   => ['nullable','string','max:255'],
+        'descripcion'      => ['nullable','string'],
+        'fecha'            => ['required','date'],
+
+        'directivos'       => ['array'],
+        'directivos.*'     => ['integer','exists:directivos,id'],
+    ];
+
+
+      public function actualizarReconocimiento()
     {
         $this->validate();
 
-        $rec = Reconocimiento::findOrFail($this->reconocimientoId);
-
-        // Si quieres sanear HTML antes de guardar, aplica aquí (ej. mews/purifier).
-        $rec->update([
+        // actualizar datos base
+        $this->reconocimiento->update([
+            'reconocimiento_imagen_id' => $this->reconocimiento_imagen_id,
             'reconocimiento_a' => $this->reconocimiento_a,
             'lugar_obtenido'   => $this->lugar_obtenido,
-            'descripcion'      => $this->descripcion,   // TinyMCE HTML
+            'descripcion'      => $this->descripcion,
             'fecha'            => $this->fecha,
         ]);
 
-        // Opcional: notificación/toast
-        $this->dispatch('toast', type: 'success', message: 'Reconocimiento actualizado');
+        // sincronizar pivote (clave 🔥)
+        $this->reconocimiento->directivos()->sync($this->directivos);
 
-        // Cerrar modal en Alpine (y destruir TinyMCE en el listener del front)
-        $this->dispatch('cerrar-modal-editar');
-
-        // Limpiar estado del componente
-        $this->cerrarModal();
-        $this->dispatch('$refresh'); // refrescar listados si lo necesitas
-    }
-
-    /**
-     * Cerrar / limpiar modal
-     */
-    public function cerrarModal(): void
-    {
-        $this->reset([
-            'open',
-            'reconocimientoId',
-            'reconocimiento_a',
-            'lugar_obtenido',
-            'descripcion',
-            'fecha',
+         $this->dispatch('swal', [
+            'title' => '¡Reconocimiento actualizado correctamente!',
+            'icon' => 'success',
+            'position' => 'top-end',
         ]);
-
-        $this->resetValidation();
     }
+
+
 
     public function render()
     {
-        return view('livewire.reconocimientos.editar-reconocimiento');
+        $reconocimientosImagenes = ReconocimientoImagen::all();
+        return view('livewire.reconocimientos.editar-reconocimiento', compact('reconocimientosImagenes'));
     }
 }

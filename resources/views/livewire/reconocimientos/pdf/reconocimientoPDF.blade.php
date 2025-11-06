@@ -70,11 +70,12 @@
     }
 
     .descripcion{
-        font-size: 18px;
+        font-size: 17px;
+        width: 70%;
         text-align: center;
         color: #000;
         font-family: sans-serif;
-        margin-top: -80px;
+        margin: -75px auto 0 ;
         line-height: 20px;
     }
 
@@ -105,6 +106,7 @@
         color: #000;
         font-family: sans-serif;
         margin-top: 40px;
+        margin-left: 300px;
     }
 
     table {
@@ -133,6 +135,23 @@
 
     // $nombreRector = "{$rector->nombre} {$rector->apellido_paterno} {$rector->apellido_materno}";
     // $nombreDirectora = "{$directora->nombre} {$directora->apellido_paterno} {$directora->apellido_materno}";
+
+       // 1) Trae lo almacenado
+    $raw = $reconocimiento->descripcion ?? '';
+
+    // 2) Conserva SOLO estas etiquetas (ajusta a tu gusto)
+    $allowed = '<p><br><b><strong><i><em><u><ul><ol><li>';
+
+    $desc = strip_tags($raw, $allowed);
+
+    // 3) Quita atributos molestos (data-*, style, class, id, etc.)
+    //    así mantienes <strong> y <em> pero sin "data-start" ni estilos inline
+    $desc = preg_replace('/\s(data-[\w-]+|style|class|id)="[^"]*"/i', '', $desc);
+
+    // 4) Decodifica entidades a UTF-8 (á, é, í…) por si vienen como &aacute;
+    $desc = html_entity_decode($desc, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+    // 5) (Opcional) Normaliza dobles <br> a párrafos, etc.
 @endphp
 
 
@@ -147,7 +166,7 @@
 
           <div class="descripcion">
 
-                 {{ strip_tags($reconocimiento->descripcion) }}
+                {!! $desc !!}
 
           </div>
 
@@ -170,7 +189,7 @@
 
                     <style>
                     /* Estilos seguros para DomPDF */
-                    table.firmas { width: 70%; border-collapse: collapse; margin: 60px auto 0 auto; }
+                    table.firmas { width: 70%; border-collapse: collapse; margin: 0px auto 0 auto; }
                     table.firmas td { width: 50%;  text-align: center; vertical-align: bottom; padding: 45px 0 0 0; }
 
                     .firma-linea { width: 300px; margin: 0 auto 6px auto;  }

@@ -26,7 +26,13 @@ Route::middleware(['auth'])->group(function () {
 
     // RUTA RECONOCIMIENTO
     Route::get('reconocimiento', [ReconocimientoController::class, 'index'])->name('reconocimiento');
+
+    // RECONOCIMIENTO EDITAR
+    Route::get('reconocimiento/editar/{id}', [ReconocimientoController::class, 'editar'])->name('reconocimiento.editar');
+
     Route::get('reconocimiento/imagenes', [ReconocimientoController::class, 'imagenes'])->name('reconocimiento.imagenes');
+
+
     Route::get('reconocimiento/{id}', [PDFController::class, 'reconocimiento'])->name('reconocimiento.pdf');
 
 

@@ -18,5 +18,11 @@ class ReconocimientoController extends Controller
         return view('reconocimientos.imagenes');
     }
 
+    public function editar($id)
+    {
+        $reconocimiento = Reconocimiento::findOrFail($id);
+        return view('reconocimientos.editar', compact('reconocimiento'));
+    }
+
 
 }

@@ -1,73 +1,137 @@
-<div
-  x-data="{ show: false, loading: false }"
-  x-cloak
-  x-trap.noscroll="show"
-  x-show="show"
-  @abrir-modal-editar.window="show = true; loading = true"
-  @editar-cargado.window="loading = false"
-  @cerrar-modal-editar.window="
-      show = false;
-      loading = false;
-      $wire.cerrarModal()
-  "
-  @keydown.escape.window="show = false; $wire.cerrarModal()"
-  class="fixed inset-0 z-50 flex items-center justify-center"
-  aria-live="polite"
->
-  <!-- Overlay -->
-  <div class="absolute inset-0 bg-neutral-900/70 backdrop-blur-sm"
-       x-show="show" x-transition.opacity
-       @click.self="show = false; $wire.cerrarModal()"></div>
-
-
+ <form wire:submit.prevent="actualizarReconocimiento">
     <div
-        class="relative w-[92vw] sm:w-[88vw] md:w-[70vw] max-w-2xl mx-4 sm:mx-6 bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl ring-1 ring-black/5 dark:ring-white/10 overflow-hidden"
-        role="dialog" aria-modal="true" aria-labelledby="titulo-modal-cuatrimestre"
-        x-show="show"
-        x-transition:enter="transition ease-out duration-200"
-        x-transition:enter-start="opacity-0 scale-95 translate-y-2"
-        x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-        x-transition:leave="transition ease-in duration-150"
-        x-transition:leave-start="opacity-100 scale-100 translate-y-0"
-        x-transition:leave-end="opacity-0 scale-95 translate-y-2"
-        wire:ignore.self
+      x-data="{
+        open:false, src:'', title:'',
+        // flags
+        collapseA:false,
+        collapseB:false,
+        // cargar desde localStorage
+        load() {
+          try {
+            this.collapseA = JSON.parse(localStorage.getItem('recon:collapseA') ?? 'false');
+            this.collapseB = JSON.parse(localStorage.getItem('recon:collapseB') ?? 'false');
+          } catch (_) {
+            this.collapseA = false; this.collapseB = false;
+          }
+        }
+      }"
+      x-init="
+        load();
+        $watch('collapseA', v => localStorage.setItem('recon:collapseA', JSON.stringify(v)));
+        $watch('collapseB', v => localStorage.setItem('recon:collapseB', JSON.stringify(v)));
+      "
+      x-cloak
+      class="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-sm overflow-hidden"
     >
-    <!-- Acento -->
-     <div class="h-1.5 w-full bg-gradient-to-r from-indigo-500 via-violet-500 to-fuchsia-500"></div>
+      <style>[x-cloak]{display:none!important}</style>
 
-    <!-- Header -->
-    <div class="flex items-start justify-between gap-4 px-5 py-4 sm:px-6 sm:py-5">
-      <h2 class="text-lg sm:text-xl font-semibold text-zinc-900 dark:text-zinc-100">
-        Editar Reconocimiento
-        {{-- <flux:badge color="indigo" class="align-middle">{{ $nombre }}</flux:badge> --}}
-      </h2>
-
-      <button
-        @click="show = false; $wire.cerrarModal()"
-        type="button"
-        class="inline-flex h-9 w-9 items-center justify-center rounded-full text-zinc-500 hover:text-zinc-800 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-neutral-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-        aria-label="Cerrar"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+      <!-- HEADER #1 -->
+      <button type="button" @click="collapseA = !collapseA"
+              class="w-full px-4 sm:px-5 py-3 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between cursor-pointer">
+        <div class="flex items-center gap-3">
+          <h2 class="text-sm sm:text-base font-semibold text-neutral-800 dark:text-neutral-100">
+            Reconocimientos
+          </h2>
+          <span class="text-xs text-neutral-500 dark:text-neutral-400">
+            @isset($reconocimientosImagenes) {{ $reconocimientosImagenes->count() }} elementos @endisset
+          </span>
+        </div>
+        <svg class="h-5 w-5 text-neutral-500 transition-transform duration-200"
+             :class="collapseA ? '-rotate-90' : 'rotate-0'"
+             xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.213l3.71-3.98a.75.75 0 111.08 1.04l-4.24 4.54a.75.75 0 01-1.08 0l-4.24-4.54a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
         </svg>
       </button>
-    </div>
 
-    <!-- Contenido -->
-    <div class="px-5 sm:px-6 pb-4 sm:pb-6 max-h-[75vh] overflow-y-auto">
+      <!-- Toolbar -->
+      <div class="px-4 sm:px-5 py-2 flex items-center gap-3 border-b border-neutral-200 dark:border-neutral-800">
+        <button type="button"
+                class="text-xs px-2 py-1 rounded border dark:border-neutral-700"
+                x-on:click="$wire.set('reconocimiento_id', null)">
+          Limpiar selección
+        </button>
+        @error('reconocimiento_id')
+          <span class="text-xs text-red-600">{{ $message }}</span>
+        @enderror
+      </div>
 
-        <form
-        x-on:submit="loading = true"
-        wire:submit.prevent="actualizarReconocimiento"
-        class="px-5 sm:px-6 pb-5"
-        >
-        <flux:field>
-          <div class="grid grid-cols-1 md:grid-cols-1 gap-5">
+      <!-- GRID PLANTILLAS (COLLAPSE #1) -->
+      <!-- Nota: se muestra cuando collapseA es FALSE -->
+      <div x-show="!collapseA" x-collapse class="overflow-hidden">
+        @forelse($reconocimientosImagenes as $plantilla)
+          @if($loop->first)
+            <div class="p-4 sm:p-5">
+              <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4" id="grid-reconocimientos">
+          @endif
 
-            <!-- Col: Campos -->
-            <div class="space-y-4">
-               <flux:input
+                <figure class="group relative rounded-xl overflow-hidden border border-neutral-200 dark:border-neutral-800 bg-white/60 dark:bg-neutral-900/60"
+                        wire:key="recon-{{ $plantilla->id }}">
+                  <!-- Radio: una sola plantilla -->
+                  <label class="absolute left-2 top-2 z-10 inline-flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="reconocimiento_imagen_id"
+                      wire:model="reconocimiento_imagen_id"
+                      value="{{ $plantilla->id }}"
+                      class="h-4 w-4 rounded border-neutral-300 text-indigo-600 focus:ring-indigo-500"
+                    />
+                    <span class="sr-only">Seleccionar</span>
+                  </label>
+
+                  @if(!empty($plantilla->imagen))
+                    <img
+                      src="{{ asset('storage/imagenesReconocimientos/'.$plantilla->imagen) }}"
+                      alt="Plantilla {{ $plantilla->id }}"
+                      class="h-40 w-full object-cover cursor-zoom-in transition duration-200 group-hover:scale-[1.02]"
+                      data-src="{{ asset('storage/imagenesReconocimientos/'.$plantilla->imagen) }}"
+                      data-title="{{ $plantilla->descripcion ?? 'Sin título' }}"
+                      @click="src = $el.dataset.src; title = $el.dataset.title; open = true"
+                    >
+                  @else
+                    <div class="h-40 w-full grid place-content-center text-neutral-400 bg-neutral-50 dark:bg-neutral-800">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M21 19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7h2l2-3h10l2 3h2zM8 13a4 4 0 1 0 8 0a4 4 0 0 0-8 0z"/>
+                      </svg>
+                    </div>
+                  @endif
+
+                  <figcaption class="px-3 py-2 text-xs text-neutral-600 dark:text-neutral-300 truncate">
+                    {{ $plantilla->descripcion ?? 'Sin descripción' }}
+                  </figcaption>
+                </figure>
+
+          @if($loop->last)
+              </div>
+            </div>
+          @endif
+        @empty
+          <div class="p-8 text-center text-neutral-500">
+            No hay reconocimientos.
+          </div>
+        @endforelse
+      </div>
+
+      <!-- HEADER #2 -->
+      <button type="button" @click="collapseB = !collapseB"
+              class="w-full px-4 sm:px-5 py-3 border-t border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between cursor-pointer">
+        <div class="flex items-center gap-3">
+          <h2 class="text-sm sm:text-base font-semibold text-neutral-800 dark:text-neutral-100">
+            Formulario del reconocimiento
+          </h2>
+          <span class="text-xs text-neutral-500 dark:text-neutral-400">Completa los datos</span>
+        </div>
+        <svg class="h-5 w-5 text-neutral-500 transition-transform duration-200"
+             :class="collapseB ? '-rotate-90' : 'rotate-0'"
+             xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.213l3.71-3.98a.75.75 0 111.08 1.04l-4.24 4.54a.75.75 0 01-1.08 0l-4.24-4.54a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
+        </svg>
+      </button>
+
+      <!-- CONTENIDO #2 (COLLAPSE B) -->
+      <!-- Nota: se muestra cuando collapseB es FALSE -->
+      <div x-show="!collapseB" x-collapse class="overflow-hidden">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 px-4 sm:px-5 pb-4 mt-4">
+          <flux:input
             label="Reconocimiento a:"
             placeholder="Nombre de la persona/institución"
             badge="Requerido"
@@ -85,28 +149,23 @@
             badge="Requerido"
             wire:model="fecha"
           />
-            </div>
-          </div>
-            </flux:field>
+        </div>
 
-              <div >
-          <label for="descripcionReconocimiento" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1 mt-2">
+        <div class="px-4 sm:px-5">
+          <label for="descripcionReconocimiento" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
             Descripción del Reconocimiento
           </label>
           <p class="text-xs text-neutral-500 dark:text-neutral-400 mb-2">
             Este texto aparecerá en la ficha del reconocimiento. Puedes usar el editor enriquecido.
           </p>
 
-
-
           <!-- Con TinyMCE -->
           <div wire:ignore>
             <textarea
-              id="descripcionReconocimientoEditar"
+              id="descripcionReconocimiento"
               rows="6"
               class="block w-full min-h-[140px] rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-100 p-3 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-y shadow-sm transition"
-              placeholder="Escribe la descripción del reconocimiento...">
-            </textarea>
+              placeholder="Escribe la descripción del reconocimiento..."></textarea>
           </div>
           @error('descripcion')
             <p class="mt-2 text-xs text-red-600">{{ $message }}</p>
@@ -114,74 +173,61 @@
           <p class="mt-2 text-xs text-neutral-400">Máx. recomendado 500 caracteres.</p>
         </div>
 
+        <!-- DIRECTIVOS (múltiple) -->
+        <div class="px-4 sm:px-5 mt-4">
+          <p class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+            Selecciona los directivos para el reconocimiento
+          </p>
 
-
-          <!-- Footer acciones -->
-          <div class="pt-4 border-t border-zinc-200 dark:border-neutral-800 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <flux:button
-              @click="show = false; $wire.cerrarModal()"
-              type="button"
-              class="cursor-pointer"
-            >
-              {{ __('Cancelar') }}
-            </flux:button>
-
-                            <flux:button
-                                variant="primary"
-                                type="submit"
-                                class="w-full sm:w-auto cursor-pointer guardar-btn"
-                                wire:loading.attr="disabled"
-                                wire:target="actualizarLicenciatura"
-
-                            >
-                                {{ __('Actualizar') }}
-                            </flux:button>
+          <div class="grid sm:grid-cols-2 gap-2">
+            <flux:checkbox.group wire:model="directivos">
+                @foreach ($directivosLista as $d)
+                    <flux:checkbox
+                    value="{{ $d->id }}"
+                    label="{{ $d->titulo }} {{ $d->nombre }} {{ $d->apellido_paterno }} {{ $d->apellido_materno }} — {{ $d->cargo }}"
+                    />
+                @endforeach
+                </flux:checkbox.group>
+                @error('directivos') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
           </div>
 
+          @error('directivos')
+            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+          @enderror
+        </div>
 
-        <!-- Loader interno -->
-             <div x-show="loading"
-                    class="absolute inset-0 z-20 flex items-center justify-center bg-white/70 dark:bg-neutral-900/70 backdrop-blur rounded-2xl">
-                <div class="flex items-center gap-3 rounded-xl bg-white dark:bg-neutral-900 px-4 py-3 ring-1 ring-neutral-200 dark:ring-neutral-800 shadow">
-                    <svg class="h-5 w-5 animate-spin text-blue-600 dark:text-blue-400" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
-                    </svg>
-                    <span class="text-sm text-neutral-800 dark:text-neutral-200">Cargando…</span>
-                </div>
-                </div>
+        <!-- BOTÓN -->
+        <div class="px-4 sm:px-5 mt-4 pb-5">
+          <button type="submit"
+                  class="cursor-pointer inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-25 transition">
+            Actualizar Reconocimiento
+          </button>
+        </div>
+      </div>
 
 
-      </form>
     </div>
-  </div>
-</div>
-
-
+  </form>
+{{-- TinyMCE v8 --}}
 <script>
 (function () {
   const TINY_SRC = "https://cdn.tiny.cloud/1/1ebweotq439cl3bk11wscr1wf0h3iemo2t74u6ve9sjcy7cl/tinymce/8/tinymce.min.js";
-  const ID = "descripcionReconocimientoEditar";
-  const SELECTOR = "#"+ID;
+  const SELECTOR = "#descripcionReconocimiento";
 
   function loadTiny(cb){
-    if (window.tinymce) return cb();
-    const s = document.createElement("script");
-    s.src = TINY_SRC; s.referrerPolicy="origin"; s.crossOrigin="anonymous";
-    s.onload = cb; s.onerror = () => console.error("[TinyMCE] Falló la carga");
+    if(window.tinymce) return cb();
+    const s=document.createElement("script");
+    s.src=TINY_SRC; s.referrerPolicy="origin"; s.crossOrigin="anonymous";
+    s.onload=cb; s.onerror=()=>console.error("[TinyMCE] Falló la carga");
     document.head.appendChild(s);
-  }
-
-  function destroyTiny(){
-    const inst = window.tinymce?.get(ID);
-    if (inst) inst.remove();
   }
 
   function initTiny(){
     const el = document.querySelector(SELECTOR);
-    if (!el) return;
+    if(!el){ console.warn("[TinyMCE] No se encontró", SELECTOR); return; }
 
-    destroyTiny(); // por si acaso
+    const inst = window.tinymce.get(el.id);
+    if(inst) inst.remove();
 
     window.tinymce.init({
       selector: SELECTOR,
@@ -189,13 +235,9 @@
       toolbar: "undo redo | blocks | bold italic | alignleft aligncenter alignright | indent outdent | bullist numlist | table",
       setup: (editor) => {
         editor.on("init", () => {
-          // Cargar valor actual desde Livewire
           const val = @json($this->descripcion ?? '');
-          if (val) editor.setContent(val);
-          // Recalc por si el modal hizo transición
-          setTimeout(() => { try { editor.execCommand('mceRepaint'); } catch(_){} }, 50);
+          if(val) editor.setContent(val);
         });
-        // Sincronizar con Livewire
         editor.on("change keyup blur", () => {
           @this.set('descripcion', editor.getContent());
         });
@@ -203,25 +245,7 @@
     });
   }
 
-  // IMPORTANTE: montar TinyMCE solo cuando el modal YA es visible
-  // Tu modal usa estos eventos:
-  // @abrir-modal-editar.window  -> show = true; loading = true
-  // @editar-cargado.window      -> loading = false  (ya cargó data)
-  // @cerrar-modal-editar.window -> cerrar modal
-
-  window.addEventListener('editar-cargado', () => {
-    // Espera un tick para que x-show abra y termine la transición
-    requestAnimationFrame(() => {
-      setTimeout(() => loadTiny(initTiny), 80);
-    });
-  });
-
-  window.addEventListener('cerrar-modal-editar', () => {
-    destroyTiny();
-  });
-
-  // Si navegas con Livewire v3 entre páginas
-  document.addEventListener("livewire:navigated", () => destroyTiny());
+  document.addEventListener("livewire:navigated", () => loadTiny(initTiny)); // Livewire v3
+  document.addEventListener("DOMContentLoaded", () => loadTiny(initTiny));
 })();
 </script>
-

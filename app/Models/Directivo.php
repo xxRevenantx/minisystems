@@ -11,10 +11,12 @@ class Directivo extends Model
     use HasFactory;
 
     protected $fillable = [
-        'titulo',
-        'nombre',
-        'cargo',
-    ];
+    'titulo',
+    'nombre',
+    'apellido_paterno',
+    'apellido_materno',
+    'cargo',
+];
 
       public function reconocimientos()
     {
