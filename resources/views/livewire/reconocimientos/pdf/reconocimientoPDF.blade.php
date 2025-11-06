@@ -181,42 +181,78 @@
           </p>
 
           {{-- {{ $reconocimiento->directivos }} --}}
+@php
+    $dirs   = $reconocimiento->directivos->sortBy('id')->values();
+    $count  = $dirs->count();
+@endphp
 
-          @php
-              // 2 por fila, ordenados por id
-              $filas = $reconocimiento->directivos->sortBy('id')->chunk(2);
-          @endphp
+<style>
+  /* Estilos seguros para DomPDF */
+  table.firmas { width: 70%; border-collapse: collapse; margin: 0 auto; }
+  table.firmas td { width: 50%; text-align: center; vertical-align: bottom; padding: 45px 0 0 0; }
+  .firma-linea  { width: 300px; margin: 0 auto 6px auto; display:block; }
+  .firma-nombre { font-family: 'calibri','Carlito',Arial,sans-serif; font-size: 13px; font-weight: bold; text-transform: uppercase; line-height: 1.2; display:block; }
+  .firma-cargo  { font-family: 'calibri','Carlito',Arial,sans-serif; font-size: 13px; line-height: 1.2; display:block; }
+</style>
 
-                    <style>
-                    /* Estilos seguros para DomPDF */
-                    table.firmas { width: 70%; border-collapse: collapse; margin: 0px auto 0 auto; }
-                    table.firmas td { width: 50%;  text-align: center; vertical-align: bottom; padding: 45px 0 0 0; }
+<table class="firmas">
+  @if ($count === 1)
+      {{-- 1 firmante: centrado --}}
+      <tr>
+        <td colspan="2">
+          <span class="firma-linea">___________________________________</span>
+          <span class="firma-nombre">
+            {{ $dirs[0]->titulo }} {{ $dirs[0]->nombre }} {{ $dirs[0]->apellido_paterno }} {{ $dirs[0]->apellido_materno }}
+          </span>
+          <span class="firma-cargo">{{ $dirs[0]->cargo }}</span>
+        </td>
+      </tr>
 
-                    .firma-linea { width: 300px; margin: 0 auto 6px auto;  }
-                    .firma-nombre { font-family: 'calibri','Carlito',Arial,sans-serif; font-size: 13px; font-weight: bold; text-transform: uppercase; line-height: 1.2; display:block; }
-                    .firma-cargo  { font-family: 'calibri','Carlito',Arial,sans-serif; font-size: 13px; line-height: 1.2; display:block; }
-                    </style>
+  @elseif ($count === 3)
+      {{-- 3 firmantes: 2 arriba + 1 centrado abajo --}}
+      <tr>
+        @foreach($dirs->take(2) as $d)
+          <td>
+            <span class="firma-linea">___________________________________</span>
+            <span class="firma-nombre">
+              {{ $d->titulo }} {{ $d->nombre }} {{ $d->apellido_paterno }} {{ $d->apellido_materno }}
+            </span>
+            <span class="firma-cargo">{{ $d->cargo }}</span>
+          </td>
+        @endforeach
+      </tr>
+      <tr>
+        <td colspan="2">
+          @php $d = $dirs[2]; @endphp
+          <span class="firma-linea">___________________________________</span>
+          <span class="firma-nombre">
+            {{ $d->titulo }} {{ $d->nombre }} {{ $d->apellido_paterno }} {{ $d->apellido_materno }}
+          </span>
+          <span class="firma-cargo">{{ $d->cargo }}</span>
+        </td>
+      </tr>
 
-                    <table class="firmas">
-                    @foreach($filas as $fila)
-                        <tr>
-                        @foreach($fila as $directivo)
-                            <td>
-                            <span class="firma-linea">___________________________________</span>
-                            <span class="firma-nombre">
-                                {{ $directivo->titulo }} {{ $directivo->nombre }} {{ $directivo->apellido_paterno }} {{ $directivo->apellido_materno }}
-                            </span>
-                            <span class="firma-cargo">{{ $directivo->cargo }}</span>
-                            </td>
-                        @endforeach
+  @else
+      {{-- Caso general (2, 4, 5…): filas de 2; si queda 1, se agrega celda vacía --}}
+      @foreach($dirs->chunk(2) as $fila)
+        <tr>
+          @foreach($fila as $d)
+            <td>
+              <span class="firma-linea">___________________________________</span>
+              <span class="firma-nombre">
+                {{ $d->titulo }} {{ $d->nombre }} {{ $d->apellido_paterno }} {{ $d->apellido_materno }}
+              </span>
+              <span class="firma-cargo">{{ $d->cargo }}</span>
+            </td>
+          @endforeach
+          @if($fila->count() < 2)
+            <td></td>
+          @endif
+        </tr>
+      @endforeach
+  @endif
+</table>
 
-                        {{-- Si la fila tiene solo 1 directivo, agrega celda vacía para mantener 2 columnas --}}
-                        @if($fila->count() < 2)
-                            <td></td>
-                        @endif
-                        </tr>
-                    @endforeach
-                    </table>
 
 
 

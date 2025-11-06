@@ -63,7 +63,7 @@ class EditarReconocimiento extends Component
         // actualizar datos base
         $this->reconocimiento->update([
             'reconocimiento_imagen_id' => $this->reconocimiento_imagen_id,
-            'reconocimiento_a' => $this->reconocimiento_a,
+            'reconocimiento_a' => trim($this->reconocimiento_a),
             'lugar_obtenido'   => $this->lugar_obtenido,
             'descripcion'      => $this->descripcion,
             'fecha'            => $this->fecha,

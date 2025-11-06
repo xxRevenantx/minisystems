@@ -55,7 +55,7 @@ class CreacionReconocimientos extends Component
 
         $rec = Reconocimiento::create([
             'reconocimiento_imagen_id' =>        $this->reconocimiento_imagen_id, // si tu relación guarda la plantilla
-            'reconocimiento_a'         => $this->reconocimiento,
+            'reconocimiento_a'         => trim($this->reconocimiento),
             'descripcion'              => $this->descripcion,
             'lugar_obtenido'           => $this->lugar_obtenido,
             'fecha'                    => $this->fecha,
