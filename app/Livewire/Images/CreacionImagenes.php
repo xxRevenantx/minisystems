@@ -7,11 +7,8 @@ use Livewire\WithFileUploads;
 use Illuminate\Validation\Rules\File;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use ZipArchive;
-
-// Intervention Image v3
-use Intervention\Image\ImageManager;
-use Intervention\Image\Drivers\Gd\Driver;     // Usa Imagick si lo prefieres
-use Intervention\Image\Encoders\JpegEncoder;  // Salida JPG
+use App\Services\ImagePipeline;
+use Illuminate\Support\Str;
 
 class CreacionImagenes extends Component
 {
@@ -19,6 +16,24 @@ class CreacionImagenes extends Component
 
     /** @var array<\Livewire\Features\FileUploads\TemporaryUploadedFile> */
     public array $images = [];
+
+    // Opciones de salida
+    public string $format = 'jpg'; // jpg|webp|avif
+    public int $quality = 85;      // 60-95
+
+    // Presets de tamaño (ancho x alto)
+    public string $preset = '2048x1365';
+
+    // Marcos
+    public ?string $frameName = 'marco.png'; // null para sin marco
+
+    // Watermark
+    public bool $addWatermark = false;
+    public ?string $watermarkPath = null; // p.ej. public_path('watermarks/logo.png')
+    public int $watermarkMargin = 24;     // px desde borde
+
+    // Renombrado masivo
+    public string $renamePattern = 'foto_{index}'; // placeholders: {index}, {date}, {orig}
 
     protected function rules(): array
     {
@@ -28,22 +43,19 @@ class CreacionImagenes extends Component
                 'required',
                 File::image()->types(['jpg','jpeg','png','webp'])->max(20 * 1024),
             ],
+            'format'  => ['required', 'in:jpg,webp,avif'],
+            'quality' => ['required','integer','between:60,95'],
+            'preset'  => ['required','regex:/^\d+x\d+$/'],
+            'renamePattern' => ['required','string','max:120'],
         ];
     }
 
-    /* ===========================
-     * Drag & drop (reordenar)
-     * =========================== */
-
-    /** Reordena $images según una lista de IDs (filename temporal de cada archivo). */
     public function reorder(array $orderedIds): void
     {
-        // Mapa por filename temporal
         $byId = [];
         foreach ($this->images as $file) {
             $byId[(string) $file->getFilename()] = $file;
         }
-
         $reordered = [];
         foreach ($orderedIds as $id) {
             if (isset($byId[$id])) {
@@ -51,16 +63,10 @@ class CreacionImagenes extends Component
                 unset($byId[$id]);
             }
         }
-
-        // Adjunta los que quedaron (por si hay diferencias)
-        foreach ($byId as $left) {
-            $reordered[] = $left;
-        }
-
+        foreach ($byId as $left) $reordered[] = $left;
         $this->images = array_values($reordered);
     }
 
-    /** Eliminar por filename temporal (seguro aunque cambie el orden). */
     public function removeByTemp(string $tempName): void
     {
         $this->images = array_values(array_filter(
@@ -69,7 +75,6 @@ class CreacionImagenes extends Component
         ));
     }
 
-    /** Eliminar por índice (opcional, si lo usas). */
     public function remove(int $index): void
     {
         if (!isset($this->images[$index])) return;
@@ -77,17 +82,45 @@ class CreacionImagenes extends Component
         $this->images = array_values($this->images);
     }
 
-    /* ===========================
-     * Generación del ZIP
-     * =========================== */
+    private function parsePreset(string $preset): array
+    {
+        [$w, $h] = array_map('intval', explode('x', $preset));
+        return [$w, $h];
+    }
+
+    private function safeBaseName(string $name): string
+    {
+        $base = pathinfo($name, PATHINFO_FILENAME);
+        return Str::of($base)->slug('_')->toString();
+    }
+
+    private function buildOutName(int $index, string $originalBase): string
+    {
+        $date = now()->format('Ymd');
+        $orig = $this->safeBaseName($originalBase);
+        $name = str_replace(['{index}','{date}','{orig}'], [$index, $date, $orig], $this->renamePattern);
+        $name = trim(preg_replace('/[^a-zA-Z0-9_\-]+/','_', $name), '_-');
+        return $name !== '' ? $name : 'foto_'.$index;
+    }
+
     public function submit(): BinaryFileResponse
     {
         $this->validate();
 
-        // Archivo ZIP temporal
-        $zipFilename = 'imagenes_' . now()->format('Ymd_His') . '.zip';
+        $pipeline = new ImagePipeline();
+        $manager  = $pipeline->manager();
+
+        $framePath = $this->frameName ? public_path('frames/'.$this->frameName) : null;
+        $hasFrame  = $framePath && is_file($framePath);
+
+        $wmPath = $this->addWatermark && $this->watermarkPath ? $this->watermarkPath : null;
+        $hasWm  = $wmPath && is_file($wmPath);
+
+        [$targetW, $targetH] = $this->parsePreset($this->preset);
+
+        $zipFilename = 'imagenes_'.now()->format('Ymd_His').'.zip';
         $tmpZipPath  = tempnam(sys_get_temp_dir(), 'zip_');
-        if ($tmpZipPath === false) abort(500, 'No se pudo crear un archivo temporal.');
+        if ($tmpZipPath === false) abort(500, 'No se pudo crear temporal.');
 
         $zip = new ZipArchive();
         if ($zip->open($tmpZipPath, ZipArchive::OVERWRITE) !== true) {
@@ -95,57 +128,93 @@ class CreacionImagenes extends Component
             abort(500, 'No se pudo abrir el ZIP temporal.');
         }
 
-        // Manager de imágenes
-        $manager = new ImageManager(new Driver());
-
-        // Marco PNG con transparencia (colócalo en public/frames/marco.png)
-        $framePath = public_path('frames/marco.png');
-        if (!is_file($framePath)) {
-            $zip->close();
-            @unlink($tmpZipPath);
-            abort(500, 'No se encontró el marco en public/frames/marco.png');
-        }
-
-        $targetW = 2048;
-        $targetH = 1365;
+        $manifest = [];
+        $added = 0;
         $i = 1;
 
         foreach ($this->images as $file) {
-            // 1) Leer imagen
-            $img = $manager->read($file->getRealPath());
+            $origName = $file->getClientOriginalName();
+            $baseName = $this->buildOutName($i, $origName);
+            $ext      = $this->format;
 
-            // 2) Ajustar a 2048x1365 (recorta si hace falta)
-            $img = $img->cover($targetW, $targetH);
+            try {
+                if (!@getimagesize($file->getRealPath())) {
+                    throw new \RuntimeException('Archivo no es una imagen válida.');
+                }
 
-            // 3) Leer marco y redimensionar (no usamos clone())
-            $frame = $manager->read($framePath)->resize($targetW, $targetH);
+                $img = $manager->read($file->getRealPath());
+                $pipeline->autorotate($file->getRealPath(), $img);
+                $img = $img->cover($targetW, $targetH);
 
-            // 4) Superponer marco
-            $img->place($frame, 'top-left', 0, 0);
+                if ($hasFrame) {
+                    $frame = $manager->read($framePath)->resize($targetW, $targetH);
+                    // sin opacidad
+                    $img->place($frame, 'top-left', 0, 0);
+                }
 
-            // 5) Codificar a JPG (calidad 85)
-            $encoded = $img->encode(new JpegEncoder(quality: 85));
+                if ($hasWm) {
+                    $watermark = $manager->read($wmPath);
+                    $wmTargetW = max(64, (int) round($targetW * 0.15));
+                    $watermark->scaleDown(width: $wmTargetW);
+                    $img->place($watermark, 'bottom-right', $this->watermarkMargin, $this->watermarkMargin);
+                }
 
-            // 6) Añadir al ZIP
-            $zipName = sprintf('foto_%d.jpg', $i++);
-            $zip->addFromString($zipName, (string) $encoded);
+                // Encoder con fallback a JPG si falla
+                try {
+                    $encoder = $pipeline->encoderFor($this->format, $this->quality);
+                    $encodedFull = $img->encode($encoder);
+                    $thumb = $img->scaleDown(width: 512);
+                    $encodedThumb = $thumb->encode($encoder);
+                } catch (\Throwable $e) {
+                    $encoder = $pipeline->encoderFor('jpg', min(90, $this->quality));
+                    $ext = 'jpg';
+                    $encodedFull = $img->encode($encoder);
+                    $thumb = $img->scaleDown(width: 512);
+                    $encodedThumb = $thumb->encode($encoder);
+                }
+
+                $zip->addFromString("full/{$baseName}.{$ext}", (string) $encodedFull);
+                $zip->addFromString("thumbs/{$baseName}_512.{$ext}", (string) $encodedThumb);
+                $added++;
+
+                $manifest[] = [
+                    'index'    => $i,
+                    'original' => $origName,
+                    'out_full' => "full/{$baseName}.{$ext}",
+                    'out_thumb'=> "thumbs/{$baseName}_512.{$ext}",
+                    'preset'   => $this->preset,
+                    'frame'    => $hasFrame ? basename($framePath) : null,
+                    'watermark'=> $hasWm ? basename($wmPath) : null,
+                    'format'   => $ext,
+                    'quality'  => $this->quality,
+                ];
+            } catch (\Throwable $e) {
+                $manifest[] = [
+                    'index'    => $i,
+                    'original' => $origName,
+                    'error'    => $e->getMessage(),
+                ];
+            }
+
+            $i++;
         }
 
+        if ($added === 0) {
+            $zip->close();
+            @unlink($tmpZipPath);
+            $this->addError('images', 'No se pudo procesar ninguna imagen.');
+            return back();
+        }
+
+        $zip->addFromString('manifest.json', json_encode($manifest, JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE));
         $zip->close();
 
-        // Limpieza de temporales de Livewire
         try {
-            foreach ($this->images as $f) {
-                @unlink($f->getRealPath());
-            }
-        } catch (\Throwable $e) {
-            // silencioso
-        }
+            foreach ($this->images as $f) @unlink($f->getRealPath());
+        } catch (\Throwable $e) {}
 
-        // Limpiar selección (opcional)
         $this->images = [];
 
-        // Descargar y eliminar ZIP
         return response()->download($tmpZipPath, $zipFilename)->deleteFileAfterSend(true);
     }
 
