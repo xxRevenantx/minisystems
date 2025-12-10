@@ -19,7 +19,7 @@ class CreacionImagenes extends Component
 
     // Opciones de salida
     public string $format = 'jpg'; // jpg|webp|avif
-    public int $quality = 85;      // 60-95
+    public int $quality = 95;      // 60-95
 
     // Presets de tamaño (ancho x alto)
     public string $preset = '2048x1365';
@@ -41,12 +41,12 @@ class CreacionImagenes extends Component
             'images'   => ['required', 'array', 'max:100'],
             'images.*' => [
                 'required',
-                File::image()->types(['jpg','jpeg','png','webp'])->max(20 * 1024),
+                File::image()->types(['jpg', 'jpeg', 'png', 'webp'])->max(20 * 1024),
             ],
             'format'  => ['required', 'in:jpg,webp,avif'],
-            'quality' => ['required','integer','between:60,95'],
-            'preset'  => ['required','regex:/^\d+x\d+$/'],
-            'renamePattern' => ['required','string','max:120'],
+            'quality' => ['required', 'integer', 'between:60,95'],
+            'preset'  => ['required', 'regex:/^\d+x\d+$/'],
+            'renamePattern' => ['required', 'string', 'max:120'],
         ];
     }
 
@@ -71,7 +71,7 @@ class CreacionImagenes extends Component
     {
         $this->images = array_values(array_filter(
             $this->images,
-            fn ($f) => (string) $f->getFilename() !== $tempName
+            fn($f) => (string) $f->getFilename() !== $tempName
         ));
     }
 
@@ -98,9 +98,9 @@ class CreacionImagenes extends Component
     {
         $date = now()->format('Ymd');
         $orig = $this->safeBaseName($originalBase);
-        $name = str_replace(['{index}','{date}','{orig}'], [$index, $date, $orig], $this->renamePattern);
-        $name = trim(preg_replace('/[^a-zA-Z0-9_\-]+/','_', $name), '_-');
-        return $name !== '' ? $name : 'foto_'.$index;
+        $name = str_replace(['{index}', '{date}', '{orig}'], [$index, $date, $orig], $this->renamePattern);
+        $name = trim(preg_replace('/[^a-zA-Z0-9_\-]+/', '_', $name), '_-');
+        return $name !== '' ? $name : 'foto_' . $index;
     }
 
     public function submit(): BinaryFileResponse
@@ -110,7 +110,7 @@ class CreacionImagenes extends Component
         $pipeline = new ImagePipeline();
         $manager  = $pipeline->manager();
 
-        $framePath = $this->frameName ? public_path('frames/'.$this->frameName) : null;
+        $framePath = $this->frameName ? public_path('frames/' . $this->frameName) : null;
         $hasFrame  = $framePath && is_file($framePath);
 
         $wmPath = $this->addWatermark && $this->watermarkPath ? $this->watermarkPath : null;
@@ -118,7 +118,7 @@ class CreacionImagenes extends Component
 
         [$targetW, $targetH] = $this->parsePreset($this->preset);
 
-        $zipFilename = 'imagenes_'.now()->format('Ymd_His').'.zip';
+        $zipFilename = 'imagenes_' . now()->format('Ymd_His') . '.zip';
         $tmpZipPath  = tempnam(sys_get_temp_dir(), 'zip_');
         if ($tmpZipPath === false) abort(500, 'No se pudo crear temporal.');
 
@@ -181,10 +181,10 @@ class CreacionImagenes extends Component
                     'index'    => $i,
                     'original' => $origName,
                     'out_full' => "full/{$baseName}.{$ext}",
-                    'out_thumb'=> "thumbs/{$baseName}_512.{$ext}",
+                    'out_thumb' => "thumbs/{$baseName}_512.{$ext}",
                     'preset'   => $this->preset,
                     'frame'    => $hasFrame ? basename($framePath) : null,
-                    'watermark'=> $hasWm ? basename($wmPath) : null,
+                    'watermark' => $hasWm ? basename($wmPath) : null,
                     'format'   => $ext,
                     'quality'  => $this->quality,
                 ];
@@ -206,12 +206,13 @@ class CreacionImagenes extends Component
             return back();
         }
 
-        $zip->addFromString('manifest.json', json_encode($manifest, JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE));
+        $zip->addFromString('manifest.json', json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
         $zip->close();
 
         try {
             foreach ($this->images as $f) @unlink($f->getRealPath());
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+        }
 
         $this->images = [];
 
