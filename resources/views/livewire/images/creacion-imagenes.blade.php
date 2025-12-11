@@ -16,17 +16,19 @@
     "
     x-on:livewire-upload-progress.window="progress = $event.detail.progress"
     class="w-full mx-auto max-h-[100vh] overflow-auto">
+
     <div
         class="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-sm overflow-hidden">
         <div
             class="px-6 py-4 border-b border-neutral-200 dark:border-neutral-800 bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600 text-white">
             <h2 class="text-base sm:text-lg font-semibold">Descargar imágenes en ZIP</h2>
             <p class="text-xs/6 sm:text-sm/6 opacity-90">
-                Redimensiona, aplica marco/watermark, renombra y descarga (full + thumbs).
+                Sube las imágenes, selecciona un marco y el tipo de dispositivo, y descarga el ZIP procesado.
             </p>
         </div>
 
         <form wire:submit.prevent="submit" class="p-6 space-y-6">
+            {{-- CAMPOS: IMÁGENES + MARCO + DISPOSITIVO --}}
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <flux:field label="Imágenes" for="images" class="md:col-span-3">
                     <input id="images" type="file" wire:model="images" multiple
@@ -43,81 +45,36 @@
                     </p>
                 </flux:field>
 
-                <flux:field label="Preset (ancho x alto)">
-                    <select wire:model.live="preset"
-                        class="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent px-3 py-2 text-sm">
-                        <option value="2048x1365">3:2 — 2048×1365 (recomendado)</option>
-                        <option value="1080x1080">1:1 — 1080×1080</option>
-                        <option value="1350x1080">4:5 — 1350×1080</option>
-                        <option value="1920x1080">16:9 — 1920×1080</option>
-                        <option value="2048x2048">1:1 — 2048×2048</option>
-                    </select>
-                    @error('preset')
+                <flux:field label="Marco de imagen">
+                    <flux:select wire:model="marco" placeholder="Selecciona un marco...">
+                        <flux:select.option value="">--- Sin marco ---</flux:select.option>
+                        @foreach ($marcos as $item)
+                            <flux:select.option value="{{ $item->id }}">
+                                {{ $item->descripcion }}
+                            </flux:select.option>
+                        @endforeach
+                    </flux:select>
+                    @error('marco')
                         <div class="mt-1 text-sm text-red-500">{{ $message }}</div>
                     @enderror
                 </flux:field>
 
-                <flux:field label="Formato de salida">
-                    <select wire:model.live="format"
-                        class="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent px-3 py-2 text-sm">
-                        <option value="jpg">JPG</option>
-                        <option value="webp">WebP</option>
-                        <option value="avif">AVIF</option>
-                    </select>
-                    @error('format')
-                        <div class="mt-1 text-sm text-red-500">{{ $message }}</div>
-                    @enderror
-                </flux:field>
-
-                <flux:field label="Calidad (60–95)">
-                    <input type="range" min="60" max="95" step="1" wire:model.live="quality"
-                        class="w-full" />
-                    <div class="text-xs mt-1">
-                        Calidad: <b>{{ $quality }}</b>
-                    </div>
-                    @error('quality')
-                        <div class="mt-1 text-sm text-red-500">{{ $message }}</div>
-                    @enderror
-                </flux:field>
-
-                <flux:field label="Marco (opcional)">
-                    <select wire:model.live="frameName"
-                        class="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent px-3 py-2 text-sm">
-                        <option value="">Sin marco</option>
-                        <option value="marco.png">marco.png</option>
-                        <option value="marco_b.png">marco_b.png</option>
-                        <option value="marco_c.png">marco_c.png</option>
-                    </select>
-                </flux:field>
-
-                <flux:field label="Watermark (PNG)">
-                    <label class="inline-flex items-center gap-2 text-sm">
-                        <input type="checkbox" wire:model.live="addWatermark" class="rounded" />
-                        Activar
-                    </label>
-
-                    <input type="text" wire:model.live="watermarkPath"
-                        placeholder="Ruta absoluta opcional (e.g., {{ public_path('watermarks/logo.png') }})"
-                        class="mt-2 w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent px-3 py-2 text-sm" />
-
-                    <div class="mt-2 text-xs">Margen</div>
-                    <input type="range" min="0" max="128" step="2" wire:model.live="watermarkMargin"
-                        class="w-full" />
-                </flux:field>
-
-                <flux:field label="Patrón de nombre de archivo" class="md:col-span-2">
-                    <input type="text" wire:model.live="renamePattern"
-                        class="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent px-3 py-2 text-sm" />
-                    <div class="text-xs mt-1 text-neutral-500">
-                        Placeholders: <code>{index}</code>, <code>{date}</code>, <code>{orig}</code> — Ej:
-                        <code>Evento_{date}_{index}</code>
-                    </div>
-                    @error('renamePattern')
+                <flux:field label="Tipo de dispositivo">
+                    <flux:select wire:model="device">
+                        <flux:select.option value="desktop">
+                            Desktop (2058x1365 - horizontal)
+                        </flux:select.option>
+                        <flux:select.option value="mobile">
+                            Móvil (1365x2058 - vertical)
+                        </flux:select.option>
+                    </flux:select>
+                    @error('device')
                         <div class="mt-1 text-sm text-red-500">{{ $message }}</div>
                     @enderror
                 </flux:field>
             </div>
 
+            {{-- Barra de progreso de subida --}}
             <div x-show="isUploading" class="rounded-lg border border-neutral-200 dark:border-neutral-800 p-3">
                 <div class="mb-1 text-xs text-neutral-600 dark:text-neutral-300" aria-live="polite">
                     Subiendo…
@@ -129,6 +86,7 @@
                 </div>
             </div>
 
+            {{-- PREVIEW GRID --}}
             <div x-data x-ref="grid" x-init="if (window.Sortable) {
                 new Sortable($refs.grid, {
                     animation: 150,
@@ -156,8 +114,9 @@
                                 class="w-full h-40 object-cover" />
 
                             @if ($frameName)
+                                {{-- El marco está en asset('storage/' . $frameName) --}}
                                 <div class="absolute inset-0 pointer-events-none"
-                                    style="background: url('{{ asset('frames/' . $frameName) }}') center/cover no-repeat;"
+                                    style="background: url('{{ asset('storage/' . $frameName) }}') center/cover no-repeat;"
                                     aria-hidden="true"></div>
                             @endif
                         </div>
@@ -179,6 +138,7 @@
                 @endforelse
             </div>
 
+            {{-- BOTÓN SUBMIT --}}
             <div class="flex items-center gap-3">
                 <flux:button type="submit" variant="primary" wire:loading.attr="disabled"
                     x-bind:disabled="!Array.isArray($wire.get('images')) || $wire.get('images').length === 0">

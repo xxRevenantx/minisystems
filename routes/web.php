@@ -24,6 +24,9 @@ Route::middleware(['auth'])->group(function () {
     // MIS RUTAS
     Route::get('images', [ImagesController::class, 'index'])->name('images');
 
+    // MARCO DE IMAGENES
+    Route::get('marcos', [ImagesController::class, 'marcos'])->name('marcos');
+
     // RUTA RECONOCIMIENTO
     Route::get('reconocimiento', [ReconocimientoController::class, 'index'])->name('reconocimiento');
 

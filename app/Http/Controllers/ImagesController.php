@@ -15,4 +15,8 @@ class ImagesController extends Controller
         return view('images.index');
     }
 
+    public function marcos(){
+        return view('marcos.index');
+    }
+
 }
