@@ -64,7 +64,7 @@ class CreacionReconocimientos extends Component
         $rec->directivos()->sync($this->directivos);
 
         // Notificación (opcional)
-       $this->dispatch('swal', [
+        $this->dispatch('swal', [
             'title' => 'Reconocimiento creado correctamente!',
             'icon' => 'success',
             'position' => 'top-end',

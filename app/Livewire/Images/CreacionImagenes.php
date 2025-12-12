@@ -20,8 +20,8 @@ class CreacionImagenes extends Component
 
     // Opciones de salida (fijas)
     public string $format = 'jpg';      // jpg|webp|avif
-    public int $quality = 100;          // 60-100
-    public string $preset = '2058x1365';
+    public int $quality = 85;           // 60-100
+    public string $preset = '1600x1067';
     public string $renamePattern = 'foto_{index}';
 
     // Dispositivo / orientación
@@ -45,7 +45,7 @@ class CreacionImagenes extends Component
                 File::image()->types(['jpg', 'jpeg', 'png', 'webp'])->max(20 * 1024),
             ],
             'format'        => ['required', 'in:jpg,webp,avif'],
-            'quality'       => ['required', 'integer', 'between:60,100'],
+            'quality'       => ['required', 'integer', 'between:60,90'],
             'preset'        => ['required', 'regex:/^\d+x\d+$/'],
             'renamePattern' => ['required', 'string', 'max:120'],
             'marco'         => ['required', 'exists:marcos,id'],
@@ -132,12 +132,12 @@ class CreacionImagenes extends Component
         $this->validate();
 
         // Ajustar preset según el tipo de dispositivo
-        // Desktop: 2058x1365 (horizontal)
-        // Mobile:  1365x2058 (vertical)
+        // Desktop: 1600x1067 (horizontal)
+        // Mobile:  1067x1600 (vertical)
         if ($this->device === 'mobile') {
-            $this->preset = '1365x2058';
+            $this->preset = '1067x1600';   // vertical
         } else {
-            $this->preset = '2058x1365';
+            $this->preset = '1600x1067';   // horizontal
         }
 
         $pipeline = new ImagePipeline();
@@ -219,29 +219,25 @@ class CreacionImagenes extends Component
                     $img->place($watermark, 'bottom-right', $this->watermarkMargin, $this->watermarkMargin);
                 }
 
-                // Encoder + thumbs
+                // Solo encoder de la imagen completa (sin thumb)
                 try {
-                    $encoder      = $pipeline->encoderFor($this->format, $this->quality);
-                    $encodedFull  = $img->encode($encoder);
-                    $thumb        = $img->scaleDown(width: 512);
-                    $encodedThumb = $thumb->encode($encoder);
+                    $encoder     = $pipeline->encoderFor($this->format, $this->quality);
+                    $encodedFull = $img->encode($encoder);
                 } catch (\Throwable $e) {
-                    $encoder      = $pipeline->encoderFor('jpg', min(90, $this->quality));
-                    $ext          = 'jpg';
-                    $encodedFull  = $img->encode($encoder);
-                    $thumb        = $img->scaleDown(width: 512);
-                    $encodedThumb = $thumb->encode($encoder);
+                    $encoder     = $pipeline->encoderFor('jpg', min(90, $this->quality));
+                    $ext         = 'jpg';
+                    $encodedFull = $img->encode($encoder);
                 }
 
+                // Agregamos solo la imagen full al ZIP
                 $zip->addFromString("full/{$baseName}.{$ext}", (string) $encodedFull);
-                $zip->addFromString("thumbs/{$baseName}_512.{$ext}", (string) $encodedThumb);
                 $added++;
 
+                // Manifest sin out_thumb
                 $manifest[] = [
                     'index'     => $i,
                     'original'  => $origName,
                     'out_full'  => "full/{$baseName}.{$ext}",
-                    'out_thumb' => "thumbs/{$baseName}_512.{$ext}",
                     'preset'    => $this->preset,
                     'frame'     => $hasFrame ? $frameName : null,
                     'watermark' => $hasWm ? basename($wmPath) : null,
@@ -273,7 +269,8 @@ class CreacionImagenes extends Component
             foreach ($this->images as $f) {
                 @unlink($f->getRealPath());
             }
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+        }
 
         $this->images = [];
 

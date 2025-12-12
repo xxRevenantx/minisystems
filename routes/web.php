@@ -36,6 +36,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('reconocimiento/imagenes', [ReconocimientoController::class, 'imagenes'])->name('reconocimiento.imagenes');
 
 
+    Route::get('descargar-reconocimientos', [PDFController::class, 'descargar_reconocimientos'])->name('descargar.reconocimientos');
+
+
     Route::get('reconocimiento/{id}', [PDFController::class, 'reconocimiento'])->name('reconocimiento.pdf');
 
 
@@ -58,4 +61,4 @@ Route::middleware(['auth'])->group(function () {
         ->name('two-factor.show');
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

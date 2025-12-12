@@ -24,5 +24,8 @@ class ReconocimientoController extends Controller
         return view('reconocimientos.editar', compact('reconocimiento'));
     }
 
-
+    public function descargar_reconocimientos()
+    {
+        return view('reconocimientos.descargar');
+    }
 }

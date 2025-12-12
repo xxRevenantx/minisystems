@@ -58,16 +58,16 @@ class MostrarReconocimientos extends Component
 
         if ($s !== '') {
             $query->where(function ($q) use ($s) {
-                $like = '%'.$s.'%';
+                $like = '%' . $s . '%';
                 $q->where('reconocimiento_a', 'like', $like)
-                  ->orWhere('lugar_obtenido', 'like', $like)
-                  ->orWhere('descripcion', 'like', $like)
-                  ->orWhere('fecha', 'like', $like) // simple: 06/11/2025 o 2025-11-06
-                  ->orWhereHas('directivos', function ($d) use ($like) {
-                      $d->where('titulo', 'like', $like)
-                        ->orWhere('nombre', 'like', $like)
-                        ->orWhere('cargo', 'like', $like);
-                  });
+                    ->orWhere('lugar_obtenido', 'like', $like)
+                    ->orWhere('descripcion', 'like', $like)
+                    ->orWhere('fecha', 'like', $like) // simple: 06/11/2025 o 2025-11-06
+                    ->orWhereHas('directivos', function ($d) use ($like) {
+                        $d->where('titulo', 'like', $like)
+                            ->orWhere('nombre', 'like', $like)
+                            ->orWhere('cargo', 'like', $like);
+                    });
             });
         }
 
