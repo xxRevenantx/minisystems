@@ -12,6 +12,8 @@ class CreacionReconocimientos extends Component
 {
     use WithFileUploads;
 
+    public $reconocimiento_id;
+
     public $reconocimiento_imagen_id = null;   // plantilla seleccionada (radio)
     public $reconocimiento = '';        // "Reconocimiento a"
     public $descripcion = '';           // HTML o texto desde TinyMCE
@@ -74,12 +76,8 @@ class CreacionReconocimientos extends Component
 
         // Reset completo
         $this->reset([
-            'reconocimiento_imagen_id',
             'reconocimiento',
-            'descripcion',
             'lugar_obtenido',
-            'fecha',
-            'directivos',
         ]);
 
         $this->descripcion = "";

@@ -14,6 +14,14 @@ class ImagenesReconocimientos extends Component
     use \Livewire\WithFileUploads;
 
 
+    // EDITAR IMAGEN RECONOCIMIENTO
+    public $isModalOpen = false;
+
+    public $imagenEditId = null;
+    public $nuevaImagen = null;
+    public $descripcionEdit = '';
+
+
      public function guardarImagenReconocimiento()
     {
 
@@ -65,6 +73,53 @@ class ImagenesReconocimientos extends Component
                 'position' => 'top-end',
             ]);
         }
+    }
+
+
+    public function editarImagen($id, $descripcion)
+    {
+        $this->imagenEditId = $id;
+        $this->descripcionEdit = $descripcion ?? '';
+        $this->nuevaImagen = null;
+        $this->isModalOpen = true;
+    }
+
+    public function actualizarImagenReconocimiento()
+    {
+        $this->validate([
+            'imagenEditId'   => 'required|exists:reconocimiento_imagenes,id',
+            'nuevaImagen'    => 'nullable|image|mimes:jpeg,jpg,png|max:5120', // 5MB
+            'descripcionEdit'=> 'required|string|max:255',
+        ]);
+
+        $img = ReconocimientoImagen::findOrFail($this->imagenEditId);
+
+        // si viene nueva imagen, reemplaza
+        if ($this->nuevaImagen) {
+            if ($img->imagen) {
+                \Storage::delete('imagenesReconocimientos/' . $img->imagen);
+            }
+
+            $path = $this->nuevaImagen->store('imagenesReconocimientos');
+            $img->imagen = str_replace('imagenesReconocimientos/', '', $path);
+        }
+
+        $img->descripcion = trim($this->descripcionEdit);
+        $img->save();
+
+        $this->dispatch('swal', [
+            'title' => '¡Imagen actualizada!',
+            'icon' => 'success',
+            'position' => 'top-end',
+        ]);
+
+        $this->closeModal();
+    }
+
+    public function closeModal()
+    {
+        $this->isModalOpen = false;
+        $this->reset(['imagenEditId','nuevaImagen','descripcionEdit']);
     }
 
 
