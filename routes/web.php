@@ -47,7 +47,13 @@ Route::middleware(['auth'])->group(function () {
 
 
     // CREDENCIALES
-    Route::get('credencial/{id}', [PDFController::class, 'credencial'])->name('credencial.pdf');
+    Route::get('/credenciales/{credencial}/pdf', [PDFController::class, 'credencialPdf'])
+        ->name('credenciales.pdf.individual');
+
+    Route::get('/credenciales/pdf/todas', [PDFController::class, 'credencialesPdfTodas'])
+        ->name('credenciales.pdf.todas');
+
+
 
 
 

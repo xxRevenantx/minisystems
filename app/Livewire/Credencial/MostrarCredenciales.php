@@ -4,10 +4,22 @@ namespace App\Livewire\Credencial;
 
 use App\Models\Credencial;
 use Illuminate\Validation\Rule;
+use Livewire\Attributes\On;
 use Livewire\Component;
+use Livewire\WithPagination;
 
-class CrearCredencial extends Component
+class MostrarCredenciales extends Component
 {
+    use WithPagination;
+
+    public string $buscar = '';
+
+    public int $porPagina = 10;
+
+    public bool $modalEditar = false;
+
+    public ?int $credencialId = null;
+
     public string $nombre = '';
     public string $matricula = '';
     public string $curp = '';
@@ -20,8 +32,6 @@ class CrearCredencial extends Component
     public ?string $vigencia = null;
     public ?string $telefono = null;
     public ?string $domicilio = null;
-
-    public bool $guardado = false;
 
     public array $niveles = [
         'Preescolar',
@@ -63,7 +73,7 @@ class CrearCredencial extends Component
         return [
             'nombre' => ['required', 'string', 'min:3', 'max:255'],
             'matricula' => ['required', 'string', 'max:255'],
-            'curp' => ['required', 'string', 'min:18', 'max:18'],
+            'curp' => ['required', 'string', 'size:18'],
 
             'nivel' => [
                 'required',
@@ -106,8 +116,7 @@ class CrearCredencial extends Component
         'matricula.required' => 'La matrícula es obligatoria.',
 
         'curp.required' => 'La CURP es obligatoria.',
-        'curp.min' => 'La CURP debe tener 18 caracteres.',
-        'curp.max' => 'La CURP debe tener 18 caracteres.',
+        'curp.size' => 'La CURP debe tener exactamente 18 caracteres.',
 
         'nivel.required' => 'Selecciona un nivel.',
         'nivel.in' => 'El nivel seleccionado no es válido.',
@@ -122,6 +131,11 @@ class CrearCredencial extends Component
         'domicilio.max' => 'El domicilio no debe exceder 255 caracteres.',
     ];
 
+    public function updatingBuscar(): void
+    {
+        $this->resetPage();
+    }
+
     public function updatedNivel(): void
     {
         $this->resetErrorBag(['nivel', 'grado', 'grupo', 'licenciatura']);
@@ -135,7 +149,35 @@ class CrearCredencial extends Component
         $this->licenciatura = null;
     }
 
-    public function guardar(): void
+    #[On('credencial-creada')]
+    public function actualizarTabla(): void
+    {
+        $this->resetPage();
+    }
+
+    public function abrirEditar(int $id): void
+    {
+        $credencial = Credencial::findOrFail($id);
+
+        $this->credencialId = $credencial->id;
+        $this->nombre = $credencial->nombre;
+        $this->matricula = $credencial->matricula;
+        $this->curp = $credencial->curp;
+        $this->nivel = $credencial->nivel;
+        $this->grado = $credencial->grado;
+        $this->grupo = $credencial->grupo;
+        $this->licenciatura = $credencial->licenciatura;
+        $this->ciclo_escolar = $credencial->ciclo_escolar;
+        $this->vigencia = $credencial->vigencia;
+        $this->telefono = $credencial->telefono;
+        $this->domicilio = $credencial->domicilio;
+
+        $this->resetErrorBag();
+
+        $this->modalEditar = true;
+    }
+
+    public function actualizar(): void
     {
         $datos = $this->validate();
 
@@ -146,30 +188,55 @@ class CrearCredencial extends Component
             $datos['licenciatura'] = null;
         }
 
-        Credencial::create($datos);
+        $credencial = Credencial::findOrFail($this->credencialId);
 
-        $this->reset([
-            'nombre',
-            'matricula',
-            'curp',
-            'nivel',
-            'grado',
-            'grupo',
-            'licenciatura',
-            'ciclo_escolar',
-            'vigencia',
-            'telefono',
-            'domicilio',
-        ]);
+        $credencial->update($datos);
 
-        $this->guardado = true;
+        $this->cerrarModal();
 
-        $this->dispatch('credencial-creada');
+        $this->dispatch('credencial-actualizada');
     }
 
-    public function limpiarFormulario(): void
+    public function eliminar(int $id): void
+    {
+        $credencial = Credencial::findOrFail($id);
+
+        $credencial->delete();
+
+        if ($this->credencialesEnPaginaActual() <= 1 && $this->getPage() > 1) {
+            $this->previousPage();
+        }
+
+        $this->dispatch('credencial-eliminada');
+    }
+
+    private function credencialesEnPaginaActual(): int
+    {
+        return Credencial::query()
+            ->when($this->buscar !== '', function ($query) {
+                $query->where(function ($subquery) {
+                    $subquery->where('nombre', 'like', '%' . $this->buscar . '%')
+                        ->orWhere('matricula', 'like', '%' . $this->buscar . '%')
+                        ->orWhere('curp', 'like', '%' . $this->buscar . '%')
+                        ->orWhere('nivel', 'like', '%' . $this->buscar . '%')
+                        ->orWhere('licenciatura', 'like', '%' . $this->buscar . '%');
+                });
+            })
+            ->paginate($this->porPagina)
+            ->count();
+    }
+
+    public function cerrarModal(): void
+    {
+        $this->modalEditar = false;
+
+        $this->limpiarCampos();
+    }
+
+    public function limpiarCampos(): void
     {
         $this->reset([
+            'credencialId',
             'nombre',
             'matricula',
             'curp',
@@ -181,7 +248,6 @@ class CrearCredencial extends Component
             'vigencia',
             'telefono',
             'domicilio',
-            'guardado',
         ]);
 
         $this->resetErrorBag();
@@ -189,6 +255,24 @@ class CrearCredencial extends Component
 
     public function render()
     {
-        return view('livewire.credencial.crear-credencial');
+        $credenciales = Credencial::query()
+            ->when($this->buscar !== '', function ($query) {
+                $query->where(function ($subquery) {
+                    $subquery->where('nombre', 'like', '%' . $this->buscar . '%')
+                        ->orWhere('matricula', 'like', '%' . $this->buscar . '%')
+                        ->orWhere('curp', 'like', '%' . $this->buscar . '%')
+                        ->orWhere('nivel', 'like', '%' . $this->buscar . '%')
+                        ->orWhere('grado', 'like', '%' . $this->buscar . '%')
+                        ->orWhere('grupo', 'like', '%' . $this->buscar . '%')
+                        ->orWhere('licenciatura', 'like', '%' . $this->buscar . '%')
+                        ->orWhere('ciclo_escolar', 'like', '%' . $this->buscar . '%');
+                });
+            })
+            ->latest()
+            ->paginate($this->porPagina);
+
+        return view('livewire.credencial.mostrar-credenciales', [
+            'credenciales' => $credenciales,
+        ]);
     }
 }
