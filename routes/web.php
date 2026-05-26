@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CredencialController;
 use App\Livewire\Settings\Appearance;
 use App\Livewire\Settings\Password;
 use App\Livewire\Settings\Profile;
@@ -30,6 +31,9 @@ Route::middleware(['auth'])->group(function () {
     // RUTA RECONOCIMIENTO
     Route::get('reconocimiento', [ReconocimientoController::class, 'index'])->name('reconocimiento');
 
+    //CREDENCIAL
+    Route::get('credenciales', [CredencialController::class, 'index'])->name('credencial');
+
     // RECONOCIMIENTO EDITAR
     Route::get('reconocimiento/editar/{id}', [ReconocimientoController::class, 'editar'])->name('reconocimiento.editar');
 
@@ -40,6 +44,10 @@ Route::middleware(['auth'])->group(function () {
 
 
     Route::get('reconocimiento/{id}', [PDFController::class, 'reconocimiento'])->name('reconocimiento.pdf');
+
+
+    // CREDENCIALES
+    Route::get('credencial/{id}', [PDFController::class, 'credencial'])->name('credencial.pdf');
 
 
 
@@ -53,7 +61,7 @@ Route::middleware(['auth'])->group(function () {
         ->middleware(
             when(
                 Features::canManageTwoFactorAuthentication()
-                    && Features::optionEnabled(Features::twoFactorAuthentication(), 'confirmPassword'),
+                && Features::optionEnabled(Features::twoFactorAuthentication(), 'confirmPassword'),
                 ['password.confirm'],
                 [],
             ),

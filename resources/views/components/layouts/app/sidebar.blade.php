@@ -54,11 +54,23 @@
                         :current="request()->routeIs('reconocimiento')" wire:navigate>{{ __('Reconocimiento') }}
                     </flux:navlist.item>
 
-
                 </flux:navlist>
 
             </flux:navlist.group>
 
+        </flux:navlist>
+
+        <flux:navlist>
+            <flux:navlist.group :heading="__('Credenciales')" expandable>
+                <flux:navlist>
+
+                    <flux:navlist.item icon="home" :href="route('credencial')"
+                        :current="request()->routeIs('credencial')" wire:navigate>{{ __('Credenciales') }}
+                    </flux:navlist.item>
+
+                </flux:navlist>
+
+            </flux:navlist.group>
 
         </flux:navlist>
 
