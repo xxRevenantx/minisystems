@@ -72,7 +72,7 @@
             top: 38px;
             left: 130px;
             width: 325px;
-            font-size: 9px;
+            font-size: 8px;
             line-height: 9px;
             color: #111;
         }
@@ -84,7 +84,7 @@
         .nombreAlumno {
             text-transform: uppercase;
             font-weight: 700;
-            font-size: 8px;
+            font-size: 7px;
         }
 
         .page-break {
