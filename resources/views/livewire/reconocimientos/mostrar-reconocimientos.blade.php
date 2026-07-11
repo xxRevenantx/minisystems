@@ -1,209 +1,82 @@
-<div class="relative" x-data="{
-    destroyReconocimiento(id) {
-        Swal.fire({
-            title: '¿Estás seguro?',
-            text: `El reconocimiento se eliminará de forma permanente`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#2563EB',
-            cancelButtonColor: '#EF4444',
-            cancelButtonText: 'Cancelar',
-            confirmButtonText: 'Sí, eliminar'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                @this.call('eliminarReconocimiento', id);
-            }
-        })
-    }
-}">
-    {{-- Barra de búsqueda --}}
-    <div class="flex items-center gap-2 my-4">
-        <flux:input wire:model.live.debounce.350ms="search" icon="magnifying-glass"
-            placeholder="Buscar por nombre, descripción, fecha o directivo…" class="w-full" />
-        @if ($search !== '')
-            <button wire:click="clearSearch"
-                class="inline-flex items-center px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition">
-                Limpiar
+<div class="space-y-5">
+    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+        @foreach(['total'=>'Total','borrador'=>'Borradores','revision'=>'En revisión','aprobado'=>'Aprobados','generado'=>'Generados','entregado'=>'Entregados','cancelado'=>'Cancelados'] as $key=>$label)
+            <button type="button" wire:click="$set('estadoFiltro','{{ $key === 'total' ? '' : $key }}')" class="rounded-xl border border-neutral-200 bg-white p-3 text-left transition hover:-translate-y-0.5 hover:border-[#006492] dark:border-neutral-700 dark:bg-neutral-900">
+                <span class="block text-2xl font-black {{ $key === 'cancelado' ? 'text-red-600' : ($key === 'entregado' ? 'text-[#88AC2E]' : 'text-[#006492]') }}">{{ $stats[$key] }}</span>
+                <span class="text-xs font-semibold text-neutral-500">{{ $label }}</span>
             </button>
-        @endif
+        @endforeach
     </div>
 
-    {{-- Meta: resultados --}}
-    <div class="text-xs text-neutral-500 dark:text-neutral-400 mb-2">
-        @if ($search === '')
-            Mostrando {{ $reconocimientos->total() }} reconocimiento(s)
-        @else
-            Resultado para “<span class="font-medium">{{ $search }}</span>”:
-            {{ $reconocimientos->total() }} coincidencia(s)
-        @endif
-    </div>
-
-    <div>
-        <form target="_blank" action="{{ route('descargar.reconocimientos') }}">
-            <flux:button type="submit" variant="primary" icon="arrow-down-tray" class="rounded-xl my-3 cursor-pointer">
-                Descargar reconocimientos
-            </flux:button>
-        </form>
-    </div>
-
-    {{-- Contenedor con overlay de loader --}}
-    <div class="relative rounded-2xl border border-neutral-200 dark:border-neutral-800 overflow-hidden">
-
-        {{-- Loader overlay --}}
-        <div wire:loading.delay.shortest
-            class="absolute inset-0 z-10 flex items-center justify-center bg-white/65 dark:bg-neutral-900/65 backdrop-blur-sm">
-            <div
-                class="flex items-center gap-3 rounded-xl bg-white dark:bg-neutral-900 px-4 py-3 ring-1 ring-neutral-200 dark:ring-neutral-800 shadow">
-                <svg class="h-5 w-5 animate-spin text-indigo-600" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                        stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
-                </svg>
-                <span class="text-sm">Buscando…</span>
-            </div>
+    <div class="rounded-2xl border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-700 dark:bg-neutral-800/40">
+        <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <input wire:model.live.debounce.350ms="search" placeholder="Buscar destinatario, evento, descripción o firmante" class="rounded-xl border-neutral-300 dark:border-neutral-700 dark:bg-neutral-900">
+            <select wire:model.live="eventoFiltro" class="rounded-xl border-neutral-300 dark:border-neutral-700 dark:bg-neutral-900"><option value="">Todos los eventos</option>@foreach($eventos as $e)<option value="{{ $e->id }}">{{ $e->nombre }}</option>@endforeach</select>
+            <select wire:model.live="tipoFiltro" class="rounded-xl border-neutral-300 dark:border-neutral-700 dark:bg-neutral-900"><option value="">Todos los tipos</option>@foreach($tipos as $t)<option value="{{ $t->id }}">{{ $t->nombre }}</option>@endforeach</select>
+            <select wire:model.live="plantillaFiltro" class="rounded-xl border-neutral-300 dark:border-neutral-700 dark:bg-neutral-900"><option value="">Todas las plantillas</option>@foreach($plantillas as $p)<option value="{{ $p->id }}">{{ $p->nombre ?: ($p->descripcion ?: 'Plantilla '.$p->id) }}</option>@endforeach</select>
+            <select wire:model.live="estadoFiltro" class="rounded-xl border-neutral-300 dark:border-neutral-700 dark:bg-neutral-900"><option value="">Todos los estados</option>@foreach(\App\Models\Reconocimiento::ESTADOS as $estado)<option value="{{ $estado }}">{{ ucfirst($estado) }}</option>@endforeach</select>
+            <input wire:model.live="fechaDesde" type="date" class="rounded-xl border-neutral-300 dark:border-neutral-700 dark:bg-neutral-900" title="Fecha inicial">
+            <input wire:model.live="fechaHasta" type="date" class="rounded-xl border-neutral-300 dark:border-neutral-700 dark:bg-neutral-900" title="Fecha final">
+            <div class="flex gap-2"><button wire:click="clearFilters" type="button" class="flex-1 rounded-xl border px-3 py-2 text-sm font-bold">Limpiar</button><label class="flex flex-1 items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold"><input type="checkbox" wire:model.live="verPapelera"> Papelera</label></div>
         </div>
+    </div>
 
-        {{-- Tabla --}}
-        <table class="min-w-full divide-y divide-neutral-200 dark:divide-neutral-800">
-            <thead class="bg-neutral-50 dark:bg-neutral-800">
+    @if(!$verPapelera)
+        <div class="rounded-2xl border border-[#006492]/20 bg-[#006492]/5 p-4">
+            <div class="flex flex-wrap items-center gap-3">
+                <span class="text-sm font-bold text-[#006492]">{{ count($seleccionados) }} seleccionado(s)</span>
+                <select wire:model.live="accionMasiva" class="rounded-xl border-neutral-300 text-sm dark:border-neutral-700 dark:bg-neutral-900">
+                    <option value="">Acción masiva…</option><option value="estado">Cambiar estado</option><option value="plantilla">Cambiar plantilla</option><option value="evento">Mover a evento</option><option value="fecha">Cambiar fecha</option><option value="entregar">Registrar entrega</option><option value="cancelar">Cancelar</option><option value="papelera">Enviar a papelera</option>
+                </select>
+                @if($accionMasiva === 'estado')<select wire:model="estadoMasivo" class="rounded-xl border-neutral-300 text-sm dark:border-neutral-700 dark:bg-neutral-900"><option value="">Estado…</option>@foreach(['borrador','revision','aprobado','generado'] as $e)<option value="{{ $e }}">{{ ucfirst($e) }}</option>@endforeach</select>@endif
+                @if($accionMasiva === 'plantilla')<select wire:model="plantillaMasiva" class="rounded-xl border-neutral-300 text-sm dark:border-neutral-700 dark:bg-neutral-900"><option value="">Plantilla…</option>@foreach($plantillas as $p)<option value="{{ $p->id }}">{{ $p->nombre ?: $p->descripcion }}</option>@endforeach</select>@endif
+                @if($accionMasiva === 'evento')<select wire:model="eventoMasivo" class="rounded-xl border-neutral-300 text-sm dark:border-neutral-700 dark:bg-neutral-900"><option value="">Evento…</option>@foreach($eventos as $e)<option value="{{ $e->id }}">{{ $e->nombre }}</option>@endforeach</select>@endif
+                @if($accionMasiva === 'fecha')<input wire:model="fechaMasiva" type="date" class="rounded-xl border-neutral-300 text-sm dark:border-neutral-700 dark:bg-neutral-900">@endif
+                @if($accionMasiva === 'entregar')
+                    <select wire:model="metodoEntrega" class="rounded-xl border-neutral-300 text-sm dark:border-neutral-700 dark:bg-neutral-900"><option value="impreso">Impreso</option><option value="correo">Correo</option><option value="whatsapp">WhatsApp</option><option value="digital">Descarga digital</option><option value="ceremonia">Ceremonia</option></select>
+                    <input wire:model="recibidoPor" placeholder="Recibido por" class="rounded-xl border-neutral-300 text-sm dark:border-neutral-700 dark:bg-neutral-900"><input wire:model="observacionesEntrega" placeholder="Observaciones" class="rounded-xl border-neutral-300 text-sm dark:border-neutral-700 dark:bg-neutral-900">
+                @endif
+                @if($accionMasiva === 'cancelar')<input wire:model="motivoCancelacion" placeholder="Motivo obligatorio" class="min-w-64 rounded-xl border-neutral-300 text-sm dark:border-neutral-700 dark:bg-neutral-900">@endif
+                <button type="button" wire:click="aplicarAccionMasiva" wire:loading.attr="disabled" class="rounded-xl bg-[#006492] px-4 py-2 text-sm font-bold text-white disabled:opacity-50">Aplicar</button>
+                <div class="ml-auto flex flex-wrap gap-2"><a href="{{ $downloadUrl }}" target="_blank" class="rounded-xl bg-[#88AC2E] px-4 py-2 text-sm font-bold text-white">PDF combinado</a>@if(class_exists(\ZipArchive::class))<a href="{{ str_replace(route('descargar.reconocimientos'), route('descargar.reconocimientos.zip'), $downloadUrl) }}" class="rounded-xl bg-[#006492] px-4 py-2 text-sm font-bold text-white">ZIP individual</a>@else<span class="rounded-xl bg-neutral-200 px-4 py-2 text-sm font-bold text-neutral-500" title="Habilita la extensión zip de PHP">ZIP no disponible</span>@endif<a href="{{ str_replace(route('descargar.reconocimientos'), route('reconocimientos.exportar.csv'), $downloadUrl) }}" class="rounded-xl border border-[#006492] px-4 py-2 text-sm font-bold text-[#006492]">Exportar CSV</a></div>
+            </div>
+            @error('seleccionados')<p class="mt-2 text-xs text-red-600">{{ $message }}</p>@enderror
+        </div>
+    @endif
+
+    <div class="relative overflow-x-auto rounded-2xl border border-neutral-200 dark:border-neutral-700">
+        <div wire:loading.delay class="absolute inset-0 z-20 grid place-items-center bg-white/70 backdrop-blur-sm dark:bg-neutral-900/70"><div class="rounded-xl bg-white px-4 py-3 text-sm font-bold shadow dark:bg-neutral-800">Actualizando…</div></div>
+        <table class="min-w-full text-sm">
+            <thead class="bg-neutral-100 text-xs uppercase text-neutral-500 dark:bg-neutral-800">
                 <tr>
-                    <th
-                        class="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        Nombre</th>
-                    <th
-                        class="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        Autoridades</th>
-                    <th
-                        class="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        Fecha</th>
-                    <th
-                        class="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        Acciones</th>
+                    <th class="p-3">@if(!$verPapelera)<button type="button" wire:click="seleccionarPagina({{ $reconocimientos->pluck('id')->values()->toJson() }})" class="rounded-lg border px-2 py-1 text-[10px] font-bold">Todos</button>@endif</th>
+                    <th class="p-3 text-left">Destinatario</th><th class="p-3 text-left">Evento / tipo</th><th class="p-3 text-left">Estado</th><th class="p-3 text-left">Fecha</th><th class="p-3 text-left">Firmantes</th><th class="p-3 text-right">Acciones</th>
                 </tr>
             </thead>
-
-            {{-- Skeleton mientras carga --}}
-            <tbody class="bg-white dark:bg-neutral-900 divide-y divide-neutral-200 dark:divide-neutral-800"
-                wire:loading.class="opacity-60">
-
-                @php $colspan = 5; @endphp
-
-                @if ($reconocimientos->total() === 0 && $search === '')
-                    {{-- Estado vacío: no hay nada en la BD --}}
-                    <tr>
-                        <td colspan="{{ $colspan }}" class="px-6 py-12 text-center">
-                            <div class="mx-auto max-w-md">
-                                <div
-                                    class="mx-auto mb-3 h-10 w-10 rounded-full bg-neutral-100 dark:bg-neutral-800 grid place-items-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-neutral-500"
-                                        viewBox="0 0 24 24" fill="currentColor">
-                                        <path
-                                            d="M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2m1 15h-2v-2h2zm0-4h-2V7h2z" />
-                                    </svg>
-                                </div>
-                                <p class="text-sm font-medium text-neutral-800 dark:text-neutral-100">Aún no hay
-                                    reconocimientos</p>
-                                <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">Cuando registres el
-                                    primero, aparecerá aquí.</p>
-                                {{-- Acción opcional --}}
-                                {{-- <a href="{{ route('reconocimiento.crear') }}" class="mt-4 inline-flex items-center px-3 py-2 rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Crear reconocimiento</a> --}}
-                            </div>
-                        </td>
-                    </tr>
-                @elseif($reconocimientos->count() === 0 && $search !== '')
-                    {{-- Sin coincidencias para la búsqueda actual --}}
-                    <tr>
-                        <td colspan="{{ $colspan }}"
-                            class="px-6 py-10 text-center text-sm text-neutral-500 dark:text-neutral-300">
-                            No se encontraron resultados para
-                            “<span class="font-medium">{{ $search }}</span>”.
-                            <button wire:click="clearSearch" class="ml-2 underline hover:no-underline">Limpiar
-                                búsqueda</button>
-                        </td>
-                    </tr>
-                @else
-                    {{-- Hay resultados --}}
-                    @foreach ($reconocimientos as $reconocimiento)
-                        <tr>
-                            <td
-                                class="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-neutral-100">
-
-                                <flux:heading class="flex items-center gap-2">
-                                    {{ $reconocimiento->reconocimiento_a }}
-                                    <flux:tooltip toggleable>
-                                        <flux:button icon="information-circle" size="sm" variant="ghost" />
-                                        <flux:tooltip.content class="max-w-[22rem] space-y-2">
-                                            <p class="text-neutral-700 dark:text-neutral-300">{!! $reconocimiento->descripcion !!}
-                                            </p>
-                                        </flux:tooltip.content>
-                                    </flux:tooltip>
-                                </flux:heading>
-                            </td>
-
-
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-300">
-                                @forelse($reconocimiento->directivos as $directivo)
-                                    <div>
-                                        {{ $directivo->titulo }} {{ $directivo->nombre }}
-                                        {{ $directivo->apellido_paterno }} {{ $directivo->apellido_materno }} -
-                                        {{ $directivo->cargo }}
-                                    </div>
-                                @empty
-                                    <span class="text-neutral-400">Sin directivos</span>
-                                @endforelse
-                            </td>
-
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-300">
-                                {{ \Carbon\Carbon::parse($reconocimiento->fecha)->format('d/m/Y') }}
-                            </td>
-
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 dark:text-neutral-300">
-                                <div class="flex space-x-2">
-                                    <form action="{{ route('reconocimiento.pdf', $reconocimiento->id) }}"
-                                        method="GET" target="_blank">
-                                        <button type="submit"
-                                            class="inline-flex items-center cursor-pointer px-3 py-1.5 rounded-md text-white bg-green-600 hover:bg-green-700 transition">
-                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                            </svg>
-                                            PDF
-                                        </button>
-                                    </form>
-
-                                    <a href="{{ route('reconocimiento.editar', $reconocimiento->id) }}"
-                                        class="inline-flex items-center cursor-pointer px-3 py-1.5 rounded-md text-white bg-blue-600 hover:bg-blue-700 transition">
-                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                        </svg>
-                                        Editar
-                                    </a>
-
-                                    <button
-                                        class="inline-flex items-center cursor-pointer px-3 py-1.5 rounded-md text-white bg-red-600 hover:bg-red-700 transition"
-                                        @click="destroyReconocimiento({{ $reconocimiento->id }})">
-                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                        </svg>
-                                        Eliminar
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforeach
-                @endif
+            <tbody class="divide-y divide-neutral-200 bg-white dark:divide-neutral-800 dark:bg-neutral-900">
+            @forelse($reconocimientos as $r)
+                <tr class="align-top hover:bg-neutral-50 dark:hover:bg-neutral-800/50">
+                    <td class="p-3">@if(!$verPapelera)<input type="checkbox" wire:model="seleccionados" value="{{ $r->id }}" class="rec-check rounded border-neutral-300 text-[#006492]">@endif</td>
+                    <td class="p-3"><div class="font-bold text-neutral-900 dark:text-white">{{ $r->reconocimiento_a }}</div>@if($r->lugar_obtenido)<div class="text-xs font-semibold text-[#88AC2E]">{{ $r->lugar_obtenido }}</div>@endif<div class="mt-1 max-w-xs text-xs text-neutral-500">{{ \Illuminate\Support\Str::limit(strip_tags($r->descripcion), 100) }}</div>@if($r->version > 1)<span class="mt-1 inline-block rounded bg-neutral-100 px-2 py-0.5 text-[10px]">Versión {{ $r->version }}</span>@endif</td>
+                    <td class="p-3"><div class="font-semibold">{{ $r->evento?->nombre ?: 'Sin evento' }}</div><div class="text-xs text-neutral-500">{{ $r->tipo?->nombre ?: 'Personalizado' }}</div></td>
+                    <td class="p-3">@php $clases=['borrador'=>'bg-neutral-100 text-neutral-700','revision'=>'bg-amber-100 text-amber-800','aprobado'=>'bg-blue-100 text-blue-800','generado'=>'bg-violet-100 text-violet-800','entregado'=>'bg-green-100 text-green-800','cancelado'=>'bg-red-100 text-red-800']; @endphp<span class="rounded-full px-2.5 py-1 text-xs font-bold {{ $clases[$r->estado] ?? 'bg-neutral-100' }}">{{ ucfirst($r->estado) }}</span>@if($r->cancel_reason)<div class="mt-2 max-w-40 text-xs text-red-600">{{ $r->cancel_reason }}</div>@endif</td>
+                    <td class="p-3 whitespace-nowrap">{{ $r->fecha?->format('d/m/Y') }}</td>
+                    <td class="p-3"><div class="max-w-56 text-xs">@forelse($r->directivos as $d)<div>{{ $d->nombre_completo }}</div>@empty<span class="text-red-500">Sin firmantes</span>@endforelse</div></td>
+                    <td class="p-3"><div class="flex justify-end gap-1">
+                        @if($verPapelera)
+                            <button wire:click="restaurar({{ $r->id }})" class="rounded-lg bg-[#88AC2E] px-2.5 py-1.5 text-xs font-bold text-white">Restaurar</button>
+                            <button wire:click="eliminarDefinitivo({{ $r->id }})" wire:confirm="Esta acción es definitiva. ¿Continuar?" class="rounded-lg bg-red-600 px-2.5 py-1.5 text-xs font-bold text-white">Eliminar</button>
+                        @else
+                            <a href="{{ route('reconocimiento.pdf',$r) }}" target="_blank" class="rounded-lg bg-[#88AC2E] px-2.5 py-1.5 text-xs font-bold text-white">PDF</a>
+                            <a href="{{ route('reconocimiento.editar',$r) }}" class="rounded-lg bg-[#006492] px-2.5 py-1.5 text-xs font-bold text-white">Editar</a>
+                            <button wire:click="duplicar({{ $r->id }})" class="rounded-lg border px-2.5 py-1.5 text-xs font-bold">Duplicar</button>
+                            <button wire:click="eliminarReconocimiento({{ $r->id }})" wire:confirm="Se enviará a la papelera. ¿Continuar?" class="rounded-lg bg-red-600 px-2.5 py-1.5 text-xs font-bold text-white">Papelera</button>
+                        @endif
+                    </div></td>
+                </tr>
+            @empty<tr><td colspan="7" class="p-12 text-center text-neutral-500">No hay reconocimientos con los filtros seleccionados.</td></tr>@endforelse
             </tbody>
-
         </table>
     </div>
-
-    {{-- Paginación --}}
-    <div class="mt-4">
-        {{ $reconocimientos->onEachSide(1)->links() }}
-    </div>
+    <div>{{ $reconocimientos->links() }}</div>
 </div>

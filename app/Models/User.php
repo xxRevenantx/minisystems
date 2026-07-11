@@ -8,6 +8,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use App\Models\ReconocimientoPermiso;
 
 class User extends Authenticatable
 {
@@ -48,6 +49,38 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+
+
+    protected static function booted(): void
+    {
+        static::created(function (User $user) {
+            $user->permisoReconocimientos()->create([
+                'ver' => true,
+                'crear' => false,
+                'editar' => false,
+                'aprobar' => false,
+                'descargar' => true,
+                'cancelar' => false,
+                'administrar' => false,
+            ]);
+        });
+    }
+
+    public function permisoReconocimientos()
+    {
+        return $this->hasOne(ReconocimientoPermiso::class);
+    }
+
+    public function puedeReconocimientos(string $accion): bool
+    {
+        $permiso = $this->relationLoaded('permisoReconocimientos')
+            ? $this->permisoReconocimientos
+            : $this->permisoReconocimientos()->first();
+
+        // Compatibilidad: usuarios existentes conservan acceso hasta que se configure su registro.
+        return $permiso ? (bool) ($permiso->{$accion} ?? false) : (int) $this->getKey() === 1;
     }
 
     /**

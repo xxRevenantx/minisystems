@@ -7,20 +7,19 @@ use Illuminate\Database\Eloquent\Model;
 
 class Directivo extends Model
 {
-    /** @use HasFactory<\Database\Factories\DirectivoFactory> */
     use HasFactory;
 
-    protected $fillable = [
-    'titulo',
-    'nombre',
-    'apellido_paterno',
-    'apellido_materno',
-    'cargo',
-];
+    protected $fillable = ['titulo', 'nombre', 'cargo', 'firma', 'sello', 'vigencia_inicio', 'vigencia_fin', 'niveles', 'orden', 'activo'];
 
-      public function reconocimientos()
+    protected function casts(): array
     {
-        return $this->belongsToMany(Reconocimiento::class, 'directivo_reconocimiento');
+        return ['vigencia_inicio'=>'date','vigencia_fin'=>'date','niveles'=>'array','activo'=>'boolean'];
     }
 
+    public function reconocimientos() { return $this->belongsToMany(Reconocimiento::class, 'directivo_reconocimiento'); }
+
+    public function getNombreCompletoAttribute(): string
+    {
+        return trim($this->titulo.' '.$this->nombre);
+    }
 }

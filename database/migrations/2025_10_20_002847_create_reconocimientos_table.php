@@ -20,7 +20,7 @@ return new class extends Migration
             $table->date('fecha')->nullable();
 
 
-            $table->foreign('reconocimiento_imagen_id')->references('id')->on('reconocimiento_imagenes')->onDelete('cascade');
+            $table->foreign('reconocimiento_imagen_id')->references('id')->on('reconocimiento_imagenes')->nullOnDelete();
 
 
             $table->timestamps();

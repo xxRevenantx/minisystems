@@ -2,131 +2,78 @@
 
 namespace App\Livewire\Reconocimientos;
 
-use Livewire\Component;
+use App\Models\ReconocimientoEvento;
 use App\Models\ReconocimientoImagen;
+use App\Models\ReconocimientoTipo;
+use Illuminate\Support\Facades\Storage;
+use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class ImagenesReconocimientos extends Component
 {
+    use WithFileUploads;
 
     public $reconocimiento;
     public $descripcion;
+    public bool $isModalOpen=false;
+    public ?int $imagenEditId=null;
+    public $nuevaImagen=null;
+    public string $descripcionEdit='';
 
-    use \Livewire\WithFileUploads;
+    public function mount(): void { abort_unless(auth()->user()?->puedeReconocimientos('administrar'),403); }
 
-
-    // EDITAR IMAGEN RECONOCIMIENTO
-    public $isModalOpen = false;
-
-    public $imagenEditId = null;
-    public $nuevaImagen = null;
-    public $descripcionEdit = '';
-
-
-     public function guardarImagenReconocimiento()
+    public function guardarImagenReconocimiento(): void
     {
-
-        $this->validate([
-            'reconocimiento' => 'required|image|mimes:jpeg,jpg,png',
-            'descripcion' => 'required|string|max:255',
-        ],[
-
-        ]);
-
-        if ($this->reconocimiento) {
-            $imagen = $this->reconocimiento->store('imagenesReconocimientos');
-            $datos["reconocimiento"] = str_replace('imagenesReconocimientos/', '', $imagen);
-        } else {
-            $datos["reconocimiento"] = null;
-        }
-
+        $this->validate(['reconocimiento'=>'required|image|mimes:jpeg,jpg,png|max:5120','descripcion'=>'required|string|max:255']);
+        $path=$this->reconocimiento->store('imagenesReconocimientos');
         ReconocimientoImagen::create([
-            'imagen' => $datos["reconocimiento"],
-            'descripcion' => trim($this->descripcion),
+            'imagen'=>basename($path),'nombre'=>trim($this->descripcion),'descripcion'=>trim($this->descripcion),
+            'orientacion'=>'horizontal','configuracion'=>['nombre'=>['top'=>250,'tamano'=>34],'descripcion'=>['top'=>330,'tamano'=>16],'fecha'=>['top'=>470],'firmas'=>['top'=>540]],'activo'=>true,
         ]);
-
-        $this->reset([]);
-
-
-        $this->dispatch('swal', [
-            'title' => '¡Imagen creada correctamente!',
-            'icon' => 'success',
-            'position' => 'top-end',
-        ]);
-
-
+        $this->reset(['reconocimiento','descripcion']);
+        $this->dispatch('swal',['title'=>'Diseño creado correctamente','icon'=>'success','position'=>'top-end']);
     }
 
-    public function eliminarImagenReconocimiento($id)
+    public function eliminarImagenReconocimiento(int $id): void
     {
-        $imagen = ReconocimientoImagen::find($id);
-
-        if ($imagen) {
-            // Eliminar el archivo de imagen del almacenamiento
-            \Storage::delete('imagenesReconocimientos/' . $imagen->imagen);
-
-            // Eliminar el registro de la base de datos
-            $imagen->delete();
-
-            $this->dispatch('swal', [
-                'title' => '¡Imagen eliminada correctamente!',
-                'icon' => 'success',
-                'position' => 'top-end',
-            ]);
+        $imagen=ReconocimientoImagen::findOrFail($id);
+        $enUso=$imagen->reconocimientos()->withTrashed()->exists()
+            || ReconocimientoEvento::where('reconocimiento_imagen_id',$id)->exists()
+            || ReconocimientoTipo::where('reconocimiento_imagen_id',$id)->exists();
+        if($enUso){
+            $imagen->update(['activo'=>false]);
+            $this->dispatch('swal',['title'=>'El diseño está en uso y fue desactivado; no se eliminó','icon'=>'warning','position'=>'top-end']);
+            return;
         }
+        if($imagen->imagen) Storage::delete('imagenesReconocimientos/'.$imagen->imagen);
+        $imagen->delete();
+        $this->dispatch('swal',['title'=>'Diseño eliminado correctamente','icon'=>'success','position'=>'top-end']);
     }
 
-
-    public function editarImagen($id, $descripcion)
+    public function editarImagen(int $id, $descripcion): void
     {
-        $this->imagenEditId = $id;
-        $this->descripcionEdit = $descripcion ?? '';
-        $this->nuevaImagen = null;
-        $this->isModalOpen = true;
+        $this->imagenEditId=$id; $this->descripcionEdit=$descripcion ?? ''; $this->nuevaImagen=null; $this->isModalOpen=true;
     }
 
-    public function actualizarImagenReconocimiento()
+    public function actualizarImagenReconocimiento(): void
     {
-        $this->validate([
-            'imagenEditId'   => 'required|exists:reconocimiento_imagenes,id',
-            'nuevaImagen'    => 'nullable|image|mimes:jpeg,jpg,png|max:5120', // 5MB
-            'descripcionEdit'=> 'required|string|max:255',
-        ]);
-
-        $img = ReconocimientoImagen::findOrFail($this->imagenEditId);
-
-        // si viene nueva imagen, reemplaza
-        if ($this->nuevaImagen) {
-            if ($img->imagen) {
-                \Storage::delete('imagenesReconocimientos/' . $img->imagen);
-            }
-
-            $path = $this->nuevaImagen->store('imagenesReconocimientos');
-            $img->imagen = str_replace('imagenesReconocimientos/', '', $path);
+        $this->validate(['imagenEditId'=>'required|exists:reconocimiento_imagenes,id','nuevaImagen'=>'nullable|image|mimes:jpeg,jpg,png|max:5120','descripcionEdit'=>'required|string|max:255']);
+        $img=ReconocimientoImagen::findOrFail($this->imagenEditId);
+        if($this->nuevaImagen){
+            if($img->imagen) Storage::delete('imagenesReconocimientos/'.$img->imagen);
+            $img->imagen=basename($this->nuevaImagen->store('imagenesReconocimientos'));
         }
-
-        $img->descripcion = trim($this->descripcionEdit);
-        $img->save();
-
-        $this->dispatch('swal', [
-            'title' => '¡Imagen actualizada!',
-            'icon' => 'success',
-            'position' => 'top-end',
-        ]);
-
-        $this->closeModal();
+        $img->nombre=trim($this->descripcionEdit); $img->descripcion=trim($this->descripcionEdit); $img->save();
+        $this->dispatch('swal',['title'=>'Diseño actualizado','icon'=>'success','position'=>'top-end']); $this->closeModal();
     }
 
-    public function closeModal()
+    public function closeModal(): void
     {
-        $this->isModalOpen = false;
-        $this->reset(['imagenEditId','nuevaImagen','descripcionEdit']);
+        $this->isModalOpen=false; $this->reset(['imagenEditId','nuevaImagen','descripcionEdit']);
     }
-
-
 
     public function render()
     {
-        $imagenes = ReconocimientoImagen::all();
-        return view('livewire.reconocimientos.imagenes-reconocimientos', compact('imagenes'));
+        return view('livewire.reconocimientos.imagenes-reconocimientos',['imagenes'=>ReconocimientoImagen::latest()->get()]);
     }
 }

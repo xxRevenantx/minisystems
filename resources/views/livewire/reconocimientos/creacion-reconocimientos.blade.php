@@ -1,280 +1,157 @@
-<div>
-  <form wire:submit.prevent="guardarReconocimiento">
-    <div
-      x-data="{
-        open:false, src:'', title:'',
-        // flags
-        collapseA:false,
-        collapseB:false,
-        // cargar desde localStorage
-        load() {
-          try {
-            this.collapseA = JSON.parse(localStorage.getItem('recon:collapseA') ?? 'false');
-            this.collapseB = JSON.parse(localStorage.getItem('recon:collapseB') ?? 'false');
-          } catch (_) {
-            this.collapseA = false; this.collapseB = false;
-          }
-        }
-      }"
-      x-init="
-        load();
-        $watch('collapseA', v => localStorage.setItem('recon:collapseA', JSON.stringify(v)));
-        $watch('collapseB', v => localStorage.setItem('recon:collapseB', JSON.stringify(v)));
-      "
-      x-cloak
-      class="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-sm overflow-hidden"
-    >
-      <style>[x-cloak]{display:none!important}</style>
-
-      <!-- HEADER #1 -->
-      <button type="button" @click="collapseA = !collapseA"
-              class="w-full px-4 sm:px-5 py-3 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between cursor-pointer">
-        <div class="flex items-center gap-3">
-          <h2 class="text-sm sm:text-base font-semibold text-neutral-800 dark:text-neutral-100">
-            Reconocimientos
-          </h2>
-          <span class="text-xs text-neutral-500 dark:text-neutral-400">
-            @isset($reconocimientosImagenes) {{ $reconocimientosImagenes->count() }} elementos @endisset
-          </span>
-        </div>
-        <svg class="h-5 w-5 text-neutral-500 transition-transform duration-200"
-             :class="collapseA ? '-rotate-90' : 'rotate-0'"
-             xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-          <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.213l3.71-3.98a.75.75 0 111.08 1.04l-4.24 4.54a.75.75 0 01-1.08 0l-4.24-4.54a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
-        </svg>
-      </button>
-
-      <!-- Toolbar -->
-      <div class="px-4 sm:px-5 py-2 flex items-center gap-3 border-b border-neutral-200 dark:border-neutral-800">
-        <button type="button"
-                class="text-xs px-2 py-1 rounded border dark:border-neutral-700"
-                x-on:click="$wire.set('reconocimiento_id', null)">
-          Limpiar selección
-        </button>
-        @error('reconocimiento_id')
-          <span class="text-xs text-red-600">{{ $message }}</span>
-        @enderror
-      </div>
-
-      <!-- GRID PLANTILLAS (COLLAPSE #1) -->
-      <!-- Nota: se muestra cuando collapseA es FALSE -->
-      <div x-show="!collapseA" x-collapse class="overflow-hidden">
-        @forelse($reconocimientosImagenes as $plantilla)
-          @if($loop->first)
-            <div class="p-4 sm:p-5">
-              <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4" id="grid-reconocimientos">
-          @endif
-
-                <figure class="group relative rounded-xl overflow-hidden border border-neutral-200 dark:border-neutral-800 bg-white/60 dark:bg-neutral-900/60"
-                        wire:key="recon-{{ $plantilla->id }}">
-                  <!-- Radio: una sola plantilla -->
-                  <label class="absolute left-2 top-2 z-10 inline-flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="reconocimiento_imagen_id"
-                      wire:model="reconocimiento_imagen_id"
-                      value="{{ $plantilla->id }}"
-                      class="h-4 w-4 rounded border-neutral-300 text-indigo-600 focus:ring-indigo-500"
-                    />
-                    <span class="sr-only">Seleccionar</span>
-                  </label>
-
-                  @if(!empty($plantilla->imagen))
-                    <img
-                      src="{{ asset('storage/imagenesReconocimientos/'.$plantilla->imagen) }}"
-                      alt="Plantilla {{ $plantilla->id }}"
-                      class="h-40 w-full object-cover cursor-zoom-in transition duration-200 group-hover:scale-[1.02]"
-                      data-src="{{ asset('storage/imagenesReconocimientos/'.$plantilla->imagen) }}"
-                      data-title="{{ $plantilla->descripcion ?? 'Sin título' }}"
-                      @click="src = $el.dataset.src; title = $el.dataset.title; open = true"
-                    >
-                  @else
-                    <div class="h-40 w-full grid place-content-center text-neutral-400 bg-neutral-50 dark:bg-neutral-800">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M21 19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7h2l2-3h10l2 3h2zM8 13a4 4 0 1 0 8 0a4 4 0 0 0-8 0z"/>
-                      </svg>
-                    </div>
-                  @endif
-
-                  <figcaption class="px-3 py-2 text-xs text-neutral-600 dark:text-neutral-300 truncate">
-                    {{ $plantilla->descripcion ?? 'Sin descripción' }}
-                  </figcaption>
-                </figure>
-
-          @if($loop->last)
-              </div>
+<div class="space-y-5">
+    <div class="grid gap-5 xl:grid-cols-[1.25fr_.75fr]">
+        <form wire:submit="guardarReconocimiento" class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-700 dark:bg-neutral-900">
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200 bg-gradient-to-r from-[#006492]/10 to-[#88AC2E]/10 px-5 py-4 dark:border-neutral-700">
+                <div>
+                    <h2 class="text-lg font-bold text-neutral-900 dark:text-white">Nuevo reconocimiento</h2>
+                    <p class="text-sm text-neutral-500">Creación individual o masiva desde el padrón de credenciales.</p>
+                </div>
+                <div class="inline-flex rounded-xl border border-neutral-200 bg-white p-1 dark:border-neutral-700 dark:bg-neutral-800">
+                    <button type="button" wire:click="$set('modo','individual')" class="rounded-lg px-3 py-2 text-sm font-semibold {{ $modo === 'individual' ? 'bg-[#006492] text-white' : 'text-neutral-600 dark:text-neutral-300' }}">Individual</button>
+                    <button type="button" wire:click="$set('modo','masivo')" class="rounded-lg px-3 py-2 text-sm font-semibold {{ $modo === 'masivo' ? 'bg-[#88AC2E] text-white' : 'text-neutral-600 dark:text-neutral-300' }}">Masivo</button>
+                </div>
             </div>
-          @endif
-        @empty
-          <div class="p-8 text-center text-neutral-500">
-            No hay reconocimientos.
-          </div>
-        @endforelse
-      </div>
 
-      <!-- HEADER #2 -->
-      <button type="button" @click="collapseB = !collapseB"
-              class="w-full px-4 sm:px-5 py-3 border-t border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between cursor-pointer">
-        <div class="flex items-center gap-3">
-          <h2 class="text-sm sm:text-base font-semibold text-neutral-800 dark:text-neutral-100">
-            Formulario del reconocimiento
-          </h2>
-          <span class="text-xs text-neutral-500 dark:text-neutral-400">Completa los datos</span>
-        </div>
-        <svg class="h-5 w-5 text-neutral-500 transition-transform duration-200"
-             :class="collapseB ? '-rotate-90' : 'rotate-0'"
-             xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-          <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.213l3.71-3.98a.75.75 0 111.08 1.04l-4.24 4.54a.75.75 0 01-1.08 0l-4.24-4.54a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
-        </svg>
-      </button>
+            <div class="space-y-5 p-5">
+                <div class="grid gap-4 md:grid-cols-3">
+                    <label class="space-y-1 text-sm font-medium">Evento o lote
+                        <select wire:model.live="reconocimiento_evento_id" class="w-full rounded-xl border-neutral-300 dark:border-neutral-700 dark:bg-neutral-800">
+                            <option value="">Sin evento</option>
+                            @foreach($eventos as $evento)<option value="{{ $evento->id }}">{{ $evento->nombre }}</option>@endforeach
+                        </select>
+                    </label>
+                    <label class="space-y-1 text-sm font-medium">Tipo reutilizable
+                        <select wire:model.live="reconocimiento_tipo_id" class="w-full rounded-xl border-neutral-300 dark:border-neutral-700 dark:bg-neutral-800">
+                            <option value="">Personalizado</option>
+                            @foreach($tipos as $tipo)<option value="{{ $tipo->id }}">{{ $tipo->nombre }}</option>@endforeach
+                        </select>
+                    </label>
+                    <label class="space-y-1 text-sm font-medium">Estado inicial
+                        <select wire:model="estado" class="w-full rounded-xl border-neutral-300 dark:border-neutral-700 dark:bg-neutral-800">
+                            <option value="borrador">Borrador</option><option value="revision">Pendiente de revisión</option>
+                        </select>
+                    </label>
+                </div>
 
-      <!-- CONTENIDO #2 (COLLAPSE B) -->
-      <!-- Nota: se muestra cuando collapseB es FALSE -->
-      <div x-show="!collapseB" x-collapse class="overflow-hidden">
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 px-4 sm:px-5 pb-4 mt-4">
-          <flux:input
-            label="Reconocimiento a:"
-            placeholder="Nombre de la persona/institución"
-            badge="Requerido"
-            wire:model.defer="reconocimiento"
-          />
-          <flux:input
-            label="Por haber obtenido el lugar"
-            placeholder="Ej. 1er lugar en..."
-            badge="Opcional"
-            wire:model.defer="lugar_obtenido"
-          />
-          <flux:input
-            type="date"
-            label="Fecha"
-            badge="Requerido"
-            wire:model="fecha"
-          />
-        </div>
+                @if($modo === 'individual')
+                    <div class="grid gap-4 md:grid-cols-2">
+                        <label class="space-y-1 text-sm font-medium">Destinatario <span class="text-red-500">*</span>
+                            <input wire:model.live.debounce.300ms="reconocimiento" type="text" maxlength="255" placeholder="Nombre completo, institución o invitado" class="w-full rounded-xl border-neutral-300 dark:border-neutral-700 dark:bg-neutral-800">
+                            @error('reconocimiento')<span class="text-xs text-red-600">{{ $message }}</span>@enderror
+                        </label>
+                        <label class="space-y-1 text-sm font-medium">Lugar obtenido
+                            <input wire:model.live.debounce.300ms="lugar_obtenido" type="text" maxlength="255" placeholder="Ej. Primer lugar" class="w-full rounded-xl border-neutral-300 dark:border-neutral-700 dark:bg-neutral-800">
+                        </label>
+                    </div>
+                @else
+                    <section class="rounded-2xl border border-[#006492]/20 bg-[#006492]/5 p-4">
+                        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                            <div><h3 class="font-bold text-[#006492]">Seleccionar destinatarios</h3><p class="text-xs text-neutral-500">{{ count($credencialesSeleccionadas) }} seleccionado(s). Se mostrarán como máximo 100 resultados.</p></div>
+                            <button type="button" wire:click="limpiarAlumnos" class="rounded-lg border px-3 py-2 text-xs font-semibold">Limpiar selección</button>
+                        </div>
+                        <div class="grid gap-3 md:grid-cols-5">
+                            <input wire:model.live.debounce.300ms="buscarAlumno" placeholder="Nombre o matrícula" class="rounded-xl border-neutral-300 dark:border-neutral-700 dark:bg-neutral-800">
+                            <select wire:model.live="nivelFiltro" class="rounded-xl border-neutral-300 dark:border-neutral-700 dark:bg-neutral-800"><option value="">Nivel</option>@foreach($niveles as $v)<option>{{ $v }}</option>@endforeach</select>
+                            <select wire:model.live="gradoFiltro" class="rounded-xl border-neutral-300 dark:border-neutral-700 dark:bg-neutral-800"><option value="">Grado</option>@foreach($grados as $v)<option>{{ $v }}</option>@endforeach</select>
+                            <select wire:model.live="grupoFiltro" class="rounded-xl border-neutral-300 dark:border-neutral-700 dark:bg-neutral-800"><option value="">Grupo</option>@foreach($grupos as $v)<option>{{ $v }}</option>@endforeach</select>
+                            <select wire:model.live="licenciaturaFiltro" class="rounded-xl border-neutral-300 dark:border-neutral-700 dark:bg-neutral-800"><option value="">Licenciatura</option>@foreach($licenciaturas as $v)<option>{{ $v }}</option>@endforeach</select>
+                        </div>
+                        <div class="mt-3 flex flex-wrap gap-2">
+                            <button type="button" wire:click="seleccionarPagina({{ $credenciales->pluck('id')->values()->toJson() }})" class="rounded-lg bg-[#006492] px-3 py-2 text-xs font-bold text-white">Seleccionar resultados visibles</button>
+                            <a href="{{ route('reconocimientos.plantilla.csv') }}" class="rounded-lg border bg-white px-3 py-2 text-xs font-bold dark:bg-neutral-900">Descargar plantilla CSV</a><label class="flex items-center gap-2 rounded-lg border bg-white px-3 py-2 text-xs dark:bg-neutral-900">Importar CSV de Excel <input type="file" wire:model="archivoCsv" accept=".csv,.txt" class="max-w-44 text-xs"></label>
+                            @if($archivoCsv)<button type="button" wire:click="importarCsv" class="rounded-lg bg-[#88AC2E] px-3 py-2 text-xs font-bold text-white">Procesar archivo</button>@endif
+                        </div>
+                        @error('credencialesSeleccionadas')<p class="mt-2 text-xs text-red-600">{{ $message }}</p>@enderror
+                        <div class="mt-4 max-h-64 overflow-auto rounded-xl border bg-white dark:bg-neutral-900">
+                            <table class="min-w-full text-sm">
+                                <thead class="sticky top-0 bg-neutral-100 dark:bg-neutral-800"><tr><th class="p-2"></th><th class="p-2 text-left">Destinatario</th><th class="p-2 text-left">Nivel / grupo</th><th class="p-2 text-left">Matrícula</th></tr></thead>
+                                <tbody class="divide-y dark:divide-neutral-800">
+                                @forelse($credenciales as $alumno)
+                                    <tr><td class="p-2"><input type="checkbox" wire:model="credencialesSeleccionadas" value="{{ $alumno->id }}" class="rounded border-neutral-300 text-[#006492]"></td><td class="p-2 font-semibold">{{ $alumno->nombre }}</td><td class="p-2 text-neutral-500">{{ $alumno->nivel }} {{ $alumno->grado }} {{ $alumno->grupo }} {{ $alumno->licenciatura }}</td><td class="p-2">{{ $alumno->matricula }}</td></tr>
+                                @empty<tr><td colspan="4" class="p-6 text-center text-neutral-500">No hay coincidencias.</td></tr>@endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                @endif
 
-        <div class="px-4 sm:px-5">
-          <label for="descripcionReconocimiento" class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-            Descripción del Reconocimiento
-          </label>
-          <p class="text-xs text-neutral-500 dark:text-neutral-400 mb-2">
-            Este texto aparecerá en la ficha del reconocimiento. Puedes usar el editor enriquecido.
-          </p>
+                <div class="grid gap-4 md:grid-cols-[1fr_220px]">
+                    <label class="space-y-1 text-sm font-medium">Descripción <span class="text-red-500">*</span>
+                        <textarea wire:model.live.debounce.400ms="descripcion" rows="6" maxlength="5000" class="w-full rounded-xl border-neutral-300 dark:border-neutral-700 dark:bg-neutral-800" placeholder="Motivo del reconocimiento"></textarea>
+                        <span class="text-xs text-neutral-500">Puedes usar negritas y listas mediante un tipo reutilizable; el contenido se sanitiza antes de guardarse.</span>
+                        @error('descripcion')<span class="block text-xs text-red-600">{{ $message }}</span>@enderror
+                    </label>
+                    <label class="space-y-1 text-sm font-medium">Fecha <span class="text-red-500">*</span>
+                        <input wire:model.live="fecha" type="date" class="w-full rounded-xl border-neutral-300 dark:border-neutral-700 dark:bg-neutral-800">
+                        @error('fecha')<span class="text-xs text-red-600">{{ $message }}</span>@enderror
+                    </label>
+                </div>
 
-          <!-- Con TinyMCE -->
-          <div wire:ignore>
-            <textarea
-              id="descripcionReconocimiento"
-              rows="6"
-              class="block w-full min-h-[140px] rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-100 p-3 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-y shadow-sm transition"
-              placeholder="Escribe la descripción del reconocimiento..."></textarea>
-          </div>
-          @error('descripcion')
-            <p class="mt-2 text-xs text-red-600">{{ $message }}</p>
-          @enderror
-          <p class="mt-2 text-xs text-neutral-400">Máx. recomendado 500 caracteres.</p>
-        </div>
+                <section>
+                    <div class="mb-2 flex items-center justify-between"><h3 class="text-sm font-bold">Firmantes</h3><span class="text-xs text-neutral-500">Máximo 5</span></div>
+                    <div class="grid gap-2 md:grid-cols-2">
+                        @forelse($directivosLista as $d)
+                            <label class="flex items-start gap-3 rounded-xl border p-3 hover:border-[#88AC2E]"><input type="checkbox" wire:model="directivos" value="{{ $d->id }}" class="mt-1 rounded border-neutral-300 text-[#88AC2E]"><span><strong>{{ $d->nombre_completo }}</strong><small class="block text-neutral-500">{{ $d->cargo }}</small></span></label>
+                        @empty<p class="text-sm text-neutral-500">No hay firmantes activos.</p>@endforelse
+                    </div>
+                    @error('directivos')<p class="mt-2 text-xs text-red-600">{{ $message }}</p>@enderror
+                </section>
 
-        <!-- DIRECTIVOS (múltiple) -->
-        <div class="px-4 sm:px-5 mt-4">
-          <p class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-            Selecciona los directivos para el reconocimiento
-          </p>
+                <section>
+                    <div class="mb-2 flex items-center justify-between"><h3 class="text-sm font-bold">Plantilla <span class="text-red-500">*</span></h3><button type="button" wire:click="limpiarSeleccion" class="text-xs font-semibold text-[#006492]">Limpiar selección</button></div>
+                    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        @forelse($reconocimientosImagenes as $plantilla)
+                            <label class="relative cursor-pointer overflow-hidden rounded-xl border-2 {{ (int)$reconocimiento_imagen_id === $plantilla->id ? 'border-[#88AC2E] ring-2 ring-[#88AC2E]/20' : 'border-neutral-200 dark:border-neutral-700' }}">
+                                <input type="radio" wire:model.live="reconocimiento_imagen_id" value="{{ $plantilla->id }}" class="absolute left-3 top-3 z-10">
+                                <img src="{{ asset('storage/imagenesReconocimientos/'.$plantilla->imagen) }}" class="h-32 w-full object-cover" alt="Plantilla">
+                                <div class="p-2 text-xs font-semibold">{{ $plantilla->nombre ?: ($plantilla->descripcion ?: 'Plantilla '.$plantilla->id) }}</div>
+                            </label>
+                        @empty<p class="text-sm text-neutral-500">No hay plantillas activas.</p>@endforelse
+                    </div>
+                    @error('reconocimiento_imagen_id')<p class="mt-2 text-xs text-red-600">{{ $message }}</p>@enderror
+                </section>
+            </div>
 
-          <div class="grid sm:grid-cols-2 gap-2">
-            <flux:checkbox.group wire:model="directivos">
-              @foreach ($directivosLista as $d)
-                <flux:checkbox label="{{ $d->titulo }} {{ $d->nombre }} {{ $d->apellido }}" value="{{ $d->id }}" />
-              @endforeach
-            </flux:checkbox.group>
-          </div>
+            <div class="flex flex-wrap justify-end gap-3 border-t border-neutral-200 bg-neutral-50 px-5 py-4 dark:border-neutral-700 dark:bg-neutral-800/50">
+                <button type="button" wire:click="resetFormulario" class="rounded-xl border px-4 py-2 text-sm font-bold">Limpiar</button>
+                <button type="submit" wire:loading.attr="disabled" class="rounded-xl bg-[#006492] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#00557b] disabled:opacity-50">
+                    <span wire:loading.remove wire:target="guardarReconocimiento">{{ $modo === 'masivo' ? 'Generar reconocimientos' : 'Guardar reconocimiento' }}</span>
+                    <span wire:loading wire:target="guardarReconocimiento">Guardando…</span>
+                </button>
+            </div>
+        </form>
 
-          @error('directivos')
-            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-          @enderror
-        </div>
-
-        <!-- BOTÓN -->
-        <div class="px-4 sm:px-5 mt-4 pb-5">
-          <button type="submit"
-                  class="cursor-pointer inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-25 transition">
-            Guardar Reconocimiento
-          </button>
-        </div>
-      </div>
-
-      <!-- MODAL PREVIEW -->
-      <div x-show="open" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center" style="display:none;">
-        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="open=false" aria-hidden="true"></div>
-        <div x-show="open" x-transition @keydown.escape.window="open=false"
-             class="relative z-10 max-w-3xl w-full mx-4 sm:mx-6 bg-white dark:bg-neutral-900 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-black/5 dark:ring-white/10"
-             role="dialog" aria-modal="true" aria-label="Imagen ampliada">
-          <div class="flex justify-between items-start p-4 border-b dark:border-neutral-800">
-            <h3 class="text-lg font-medium text-neutral-900 dark:text-neutral-100" x-text="title"></h3>
-            <button @click="open=false" class="text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200">
-              <span class="sr-only">Cerrar</span>
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M10 8.586L4.293 2.879A1 1 0 102.879 4.293L8.586 10l-5.707 5.707a1 1 0 101.414 1.414L10 11.414l5.707 5.707a1 1 0 001.414-1.414L11.414 10l5.707-5.707a1 1 0 00-1.414-1.414L10 8.586z" clip-rule="evenodd"/>
-              </svg>
-            </button>
-          </div>
-          <div class="p-4 flex justify-center items-center">
-            <img :src="src" alt="" class="max-h-[70vh] w-auto object-contain rounded">
-          </div>
-        </div>
-      </div>
+        <aside class="xl:sticky xl:top-4 xl:self-start">
+            <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-700 dark:bg-neutral-900">
+                <div class="border-b border-neutral-200 px-4 py-3 dark:border-neutral-700"><h3 class="font-bold">Vista previa</h3><p class="text-xs text-neutral-500">Comprueba nombre, texto, fecha y firmantes antes de guardar.</p></div>
+                <div class="relative aspect-[11/8.5] overflow-hidden bg-neutral-100">
+                    @php $preview = $reconocimientosImagenes->firstWhere('id', (int)$reconocimiento_imagen_id); @endphp
+                    @if($preview)<img src="{{ asset('storage/imagenesReconocimientos/'.$preview->imagen) }}" class="absolute inset-0 h-full w-full object-cover">@endif
+                    <div class="absolute inset-0 flex flex-col items-center px-8 text-center">
+                        <div class="mt-[25%] max-w-full truncate font-serif text-2xl font-bold text-[#006492]">{{ $modo === 'masivo' ? (count($credencialesSeleccionadas).' destinatarios seleccionados') : ($reconocimiento ?: 'Nombre del destinatario') }}</div>
+                        @if($lugar_obtenido)<div class="mt-2 text-sm font-bold text-[#88AC2E]">{{ $lugar_obtenido }}</div>@endif
+                        <div class="mt-3 max-h-24 overflow-hidden text-xs leading-relaxed text-neutral-700">{{ \Illuminate\Support\Str::limit(strip_tags($descripcion ?: 'Aquí aparecerá la descripción del reconocimiento.'), 340) }}</div>
+                        <div class="mt-4 text-xs font-semibold">{{ $fecha ? \Carbon\Carbon::parse($fecha)->format('d/m/Y') : 'Fecha' }}</div>
+                        <div class="mt-auto mb-6 grid w-full grid-cols-2 gap-3 text-[9px]">
+                            @foreach($directivosLista->whereIn('id', $directivos)->take(4) as $d)<div class="border-t border-neutral-500 pt-1"><strong>{{ $d->nombre_completo }}</strong><br>{{ $d->cargo }}</div>@endforeach
+                        </div>
+                    </div>
+                </div>
+                @if(!$preview)<div class="p-3 text-center text-xs text-amber-700">Selecciona una plantilla para completar la vista previa.</div>@endif
+                @php $textoPlano = trim(strip_tags($descripcion)); @endphp
+                @if(($modo === 'individual' && mb_strlen($reconocimiento) > 48) || mb_strlen($textoPlano) > 520 || count($directivos) > 3)
+                    <div class="border-t border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+                        <strong>Revisa la distribución:</strong>
+                        @if($modo === 'individual' && mb_strlen($reconocimiento) > 48) el nombre es largo; @endif
+                        @if(mb_strlen($textoPlano) > 520) la descripción podría desbordarse; @endif
+                        @if(count($directivos) > 3) hay varios firmantes y las firmas serán más compactas; @endif
+                    </div>
+                @endif
+            </div>
+        </aside>
     </div>
-  </form>
 
-  {{-- MOSTRAR EN UNA TABLA --}}
-  <div class="px-4 sm:px-5 mt-4 bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm">
-    <h2 class="text-sm sm:text-base font-semibold text-neutral-800 dark:text-neutral-100 mb-3 p-3">
-      Reconocimientos creados
-    </h2>
-    <livewire:reconocimientos.mostrar-reconocimientos />
-  </div>
-
-{{-- TinyMCE v8 --}}
-<script>
-(function () {
-  const TINY_SRC = "https://cdn.tiny.cloud/1/1ebweotq439cl3bk11wscr1wf0h3iemo2t74u6ve9sjcy7cl/tinymce/8/tinymce.min.js";
-  const SELECTOR = "#descripcionReconocimiento";
-
-  function loadTiny(cb){
-    if(window.tinymce) return cb();
-    const s=document.createElement("script");
-    s.src=TINY_SRC; s.referrerPolicy="origin"; s.crossOrigin="anonymous";
-    s.onload=cb; s.onerror=()=>console.error("[TinyMCE] Falló la carga");
-    document.head.appendChild(s);
-  }
-
-  function initTiny(){
-    const el = document.querySelector(SELECTOR);
-    if(!el){ console.warn("[TinyMCE] No se encontró", SELECTOR); return; }
-
-    const inst = window.tinymce.get(el.id);
-    if(inst) inst.remove();
-
-    window.tinymce.init({
-      selector: SELECTOR,
-      plugins: "table lists",
-      toolbar: "undo redo | blocks | bold italic | alignleft aligncenter alignright | indent outdent | bullist numlist | table",
-      setup: (editor) => {
-        editor.on("init", () => {
-          const val = @json($this->descripcion ?? '');
-          if(val) editor.setContent(val);
-        });
-        editor.on("change keyup blur", () => {
-          @this.set('descripcion', editor.getContent());
-        });
-      },
-    });
-  }
-
-  document.addEventListener("livewire:navigated", () => loadTiny(initTiny)); // Livewire v3
-  document.addEventListener("DOMContentLoaded", () => loadTiny(initTiny));
-})();
-</script>
-
-<!-- Asegúrate de tener Alpine + plugin collapse en tu layout principal -->
-<!-- <script src="//unpkg.com/alpinejs" defer></script> -->
-<!-- <script src="//unpkg.com/@alpinejs/collapse" defer></script> -->
+    <div class="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-700 dark:bg-neutral-900">
+        <livewire:reconocimientos.mostrar-reconocimientos />
+    </div>
+</div>

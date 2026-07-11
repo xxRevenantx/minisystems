@@ -41,7 +41,9 @@ Route::middleware(['auth'])->group(function () {
 
 
     Route::get('descargar-reconocimientos', [PDFController::class, 'descargar_reconocimientos'])->name('descargar.reconocimientos');
-
+    Route::get('descargar-reconocimientos-zip', [PDFController::class, 'descargar_reconocimientos_zip'])->name('descargar.reconocimientos.zip');
+    Route::get('reconocimientos-exportar-csv', [PDFController::class, 'exportar_reconocimientos_csv'])->name('reconocimientos.exportar.csv');
+    Route::get('reconocimientos-plantilla-csv', [PDFController::class, 'plantilla_importacion_csv'])->name('reconocimientos.plantilla.csv');
 
     Route::get('reconocimiento/{id}', [PDFController::class, 'reconocimiento'])->name('reconocimiento.pdf');
 

@@ -2,23 +2,22 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class ReconocimientoImagen extends Model
 {
-  use HasFactory;
+    use HasFactory;
 
     protected $table = 'reconocimiento_imagenes';
+    protected $fillable = ['imagen', 'nombre', 'descripcion', 'orientacion', 'configuracion', 'activo'];
 
-    protected $fillable = [
-        'imagen',
-        'descripcion',
-    ];
+    protected function casts(): array { return ['configuracion' => 'array', 'activo' => 'boolean']; }
 
-    public function reconocimientos()
+    public function reconocimientos() { return $this->hasMany(Reconocimiento::class, 'reconocimiento_imagen_id'); }
+
+    public function config(string $key, mixed $default = null): mixed
     {
-        return $this->hasMany(Reconocimiento::class, 'reconocimiento_imagen_id');
+        return data_get($this->configuracion ?? [], $key, $default);
     }
-
 }

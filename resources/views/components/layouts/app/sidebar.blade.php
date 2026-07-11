@@ -49,9 +49,9 @@
 
                     <flux:navlist.item icon="home" :href="route('reconocimiento.imagenes')"
                         :current="request()->routeIs('reconocimiento.imagenes')" wire:navigate>
-                        {{ __('Reconocimiento Imagenes') }}</flux:navlist.item>
+                        {{ __('Diseños de reconocimientos') }}</flux:navlist.item>
                     <flux:navlist.item icon="home" :href="route('reconocimiento')"
-                        :current="request()->routeIs('reconocimiento')" wire:navigate>{{ __('Reconocimiento') }}
+                        :current="request()->routeIs('reconocimiento')" wire:navigate>{{ __('Gestión de reconocimientos') }}
                     </flux:navlist.item>
 
                 </flux:navlist>
