@@ -77,19 +77,23 @@ class CreacionReconocimientos extends Component
 
     public function updatedReconocimientoTipoId($value): void
     {
-        if (!$value || !($tipo = ReconocimientoTipo::find($value))) return;
+        if (!$value || !($tipo = ReconocimientoTipo::find($value)))
+            return;
         $this->descripcion = $tipo->descripcion;
         $this->reconocimiento_imagen_id = $tipo->reconocimiento_imagen_id ?: $this->reconocimiento_imagen_id;
-        if (!$tipo->usa_lugar) $this->lugar_obtenido = null;
+        if (!$tipo->usa_lugar)
+            $this->lugar_obtenido = null;
         $this->dispatch('reconocimiento-descripcion-actualizada', html: $this->descripcion);
     }
 
     public function updatedReconocimientoEventoId($value): void
     {
-        if (!$value || !($evento = ReconocimientoEvento::find($value))) return;
+        if (!$value || !($evento = ReconocimientoEvento::find($value)))
+            return;
         $this->fecha = optional($evento->fecha)->toDateString() ?: $this->fecha;
         $this->reconocimiento_tipo_id = $evento->reconocimiento_tipo_id ?: $this->reconocimiento_tipo_id;
-        if ($evento->reconocimiento_tipo_id) $this->updatedReconocimientoTipoId($evento->reconocimiento_tipo_id);
+        if ($evento->reconocimiento_tipo_id)
+            $this->updatedReconocimientoTipoId($evento->reconocimiento_tipo_id);
         $this->reconocimiento_imagen_id = $evento->reconocimiento_imagen_id ?: $this->reconocimiento_imagen_id;
     }
 
@@ -120,10 +124,12 @@ class CreacionReconocimientos extends Component
         while (($row = fgetcsv($handle, 0, ',')) !== false) {
             if ($primera) {
                 $primera = false;
-                if (isset($row[0]) && in_array(mb_strtolower(trim($row[0])), ['matricula', 'matrícula', 'nombre'], true)) continue;
+                if (isset($row[0]) && in_array(mb_strtolower(trim($row[0])), ['matricula', 'matrícula', 'nombre'], true))
+                    continue;
             }
             $dato = trim((string) ($row[0] ?? ''));
-            if ($dato === '') continue;
+            if ($dato === '')
+                continue;
             $credencial = Credencial::where('matricula', $dato)->orWhere('nombre', $dato)->first();
             $credencial ? $ids[] = $credencial->id : $noEncontrados[] = $dato;
         }
@@ -132,7 +138,7 @@ class CreacionReconocimientos extends Component
         $this->credencialesSeleccionadas = array_values(array_unique(array_merge($this->credencialesSeleccionadas, $ids)));
         $this->archivoCsv = null;
         $this->dispatch('swal', [
-            'title' => count($ids).' destinatario(s) importado(s)'.($noEncontrados ? '; '.count($noEncontrados).' no encontrado(s)' : ''),
+            'title' => count($ids) . ' destinatario(s) importado(s)' . ($noEncontrados ? '; ' . count($noEncontrados) . ' no encontrado(s)' : ''),
             'icon' => $noEncontrados ? 'warning' : 'success',
             'position' => 'top-end',
         ]);
@@ -167,7 +173,7 @@ class CreacionReconocimientos extends Component
         });
 
         $total = $destinatarios->count();
-        $this->dispatch('swal', ['title' => $total.' reconocimiento(s) creado(s) correctamente', 'icon' => 'success', 'position' => 'top-end']);
+        $this->dispatch('swal', ['title' => $total . ' reconocimiento(s) creado(s) correctamente', 'icon' => 'success', 'position' => 'top-end']);
         $this->dispatch('reconocimientoCreado');
         $this->resetFormulario();
     }
@@ -175,9 +181,16 @@ class CreacionReconocimientos extends Component
     public function resetFormulario(): void
     {
         $this->reset([
-            'reconocimiento_imagen_id', 'reconocimiento_evento_id', 'reconocimiento_tipo_id',
-            'reconocimiento', 'descripcion', 'lugar_obtenido', 'directivos', 'estado',
-            'credencialesSeleccionadas', 'archivoCsv',
+            'reconocimiento_imagen_id',
+            'reconocimiento_evento_id',
+            'reconocimiento_tipo_id',
+            'reconocimiento',
+            'descripcion',
+            'lugar_obtenido',
+            'directivos',
+            'estado',
+            'credencialesSeleccionadas',
+            'archivoCsv',
         ]);
         $this->estado = 'borrador';
         $this->fecha = now()->toDateString();
@@ -188,7 +201,7 @@ class CreacionReconocimientos extends Component
     public function render()
     {
         $credenciales = Credencial::query()
-            ->when($this->buscarAlumno, fn($q) => $q->where(fn($s) => $s->where('nombre', 'like', '%'.$this->buscarAlumno.'%')->orWhere('matricula', 'like', '%'.$this->buscarAlumno.'%')))
+            ->when($this->buscarAlumno, fn($q) => $q->where(fn($s) => $s->where('nombre', 'like', '%' . $this->buscarAlumno . '%')->orWhere('matricula', 'like', '%' . $this->buscarAlumno . '%')))
             ->when($this->nivelFiltro, fn($q) => $q->where('nivel', $this->nivelFiltro))
             ->when($this->gradoFiltro, fn($q) => $q->where('grado', $this->gradoFiltro))
             ->when($this->grupoFiltro, fn($q) => $q->where('grupo', $this->grupoFiltro))

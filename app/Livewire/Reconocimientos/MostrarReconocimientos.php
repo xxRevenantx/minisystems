@@ -36,8 +36,10 @@ class MostrarReconocimientos extends Component
     public string $motivoCancelacion = '';
 
     protected $queryString = [
-        'search' => ['except' => ''], 'estadoFiltro' => ['except' => ''],
-        'eventoFiltro' => ['except' => ''], 'tipoFiltro' => ['except' => ''],
+        'search' => ['except' => ''],
+        'estadoFiltro' => ['except' => ''],
+        'eventoFiltro' => ['except' => ''],
+        'tipoFiltro' => ['except' => ''],
     ];
 
     public function mount(): void
@@ -47,7 +49,7 @@ class MostrarReconocimientos extends Component
 
     public function updating($name): void
     {
-        if (in_array($name, ['search','estadoFiltro','eventoFiltro','tipoFiltro','plantillaFiltro','fechaDesde','fechaHasta','verPapelera'], true)) {
+        if (in_array($name, ['search', 'estadoFiltro', 'eventoFiltro', 'tipoFiltro', 'plantillaFiltro', 'fechaDesde', 'fechaHasta', 'verPapelera'], true)) {
             $this->resetPage();
             $this->seleccionados = [];
         }
@@ -55,7 +57,7 @@ class MostrarReconocimientos extends Component
 
     public function clearFilters(): void
     {
-        $this->reset(['search','estadoFiltro','eventoFiltro','tipoFiltro','plantillaFiltro','fechaDesde','fechaHasta']);
+        $this->reset(['search', 'estadoFiltro', 'eventoFiltro', 'tipoFiltro', 'plantillaFiltro', 'fechaDesde', 'fechaHasta']);
         $this->resetPage();
     }
 
@@ -65,7 +67,7 @@ class MostrarReconocimientos extends Component
             ->when($this->verPapelera, fn($q) => $q->onlyTrashed())
             ->with(['directivos', 'evento', 'tipo', 'reconocimientoImagen'])
             ->when(trim($this->search), function ($q) {
-                $s = '%'.trim($this->search).'%';
+                $s = '%' . trim($this->search) . '%';
                 $q->where(fn($w) => $w->where('reconocimiento_a', 'like', $s)
                     ->orWhere('descripcion', 'like', $s)
                     ->orWhere('lugar_obtenido', 'like', $s)
@@ -116,7 +118,8 @@ class MostrarReconocimientos extends Component
                         break;
                     case 'entregar':
                         $rec->update([
-                            'estado' => 'entregado', 'delivered_at' => now(),
+                            'estado' => 'entregado',
+                            'delivered_at' => now(),
                             'delivery_method' => $this->metodoEntrega,
                             'delivery_to' => $this->recibidoPor ?: null,
                             'delivery_notes' => $this->observacionesEntrega ?: null,
@@ -138,7 +141,7 @@ class MostrarReconocimientos extends Component
         });
 
         $this->seleccionados = [];
-        $this->reset(['accionMasiva','estadoMasivo','plantillaMasiva','eventoMasivo','fechaMasiva','recibidoPor','observacionesEntrega','motivoCancelacion']);
+        $this->reset(['accionMasiva', 'estadoMasivo', 'plantillaMasiva', 'eventoMasivo', 'fechaMasiva', 'recibidoPor', 'observacionesEntrega', 'motivoCancelacion']);
         $this->dispatch('swal', ['title' => 'Acción masiva aplicada correctamente', 'icon' => 'success', 'position' => 'top-end']);
     }
 
@@ -149,23 +152,24 @@ class MostrarReconocimientos extends Component
             abort_unless(auth()->user()?->puedeReconocimientos('aprobar'), 403);
             $data += ['approved_by' => auth()->id(), 'approved_at' => now()];
         }
-        if ($estado === 'generado') $data['generated_at'] = now();
+        if ($estado === 'generado')
+            $data['generated_at'] = now();
         $rec->update($data);
-        $rec->registrarHistorial('estado_actualizado', 'Estado cambiado a '.$estado.'.');
+        $rec->registrarHistorial('estado_actualizado', 'Estado cambiado a ' . $estado . '.');
     }
 
     public function duplicar(int $id): void
     {
         abort_unless(auth()->user()?->puedeReconocimientos('crear'), 403);
         $original = Reconocimiento::with('directivos')->findOrFail($id);
-        $copia = $original->replicate(['approved_by','approved_at','generated_at','delivered_at','delivery_method','delivery_to','delivery_notes','cancel_reason']);
+        $copia = $original->replicate(['approved_by', 'approved_at', 'generated_at', 'delivered_at', 'delivery_method', 'delivery_to', 'delivery_notes', 'cancel_reason']);
         $copia->estado = 'borrador';
         $copia->version = 1;
         $copia->duplicado_de_id = $original->id;
         $copia->created_by = auth()->id();
         $copia->save();
         $copia->directivos()->sync($original->directivos->pluck('id'));
-        $copia->registrarHistorial('duplicado', 'Duplicado del reconocimiento #'.$original->id.'.');
+        $copia->registrarHistorial('duplicado', 'Duplicado del reconocimiento #' . $original->id . '.');
         $this->dispatch('swal', ['title' => 'Reconocimiento duplicado', 'icon' => 'success', 'position' => 'top-end']);
     }
 
@@ -192,35 +196,42 @@ class MostrarReconocimientos extends Component
     }
 
     #[On('reconocimientoCreado')]
-    public function refreshList(): void { $this->resetPage(); }
+    public function refreshList(): void
+    {
+        $this->resetPage();
+    }
 
     public function render()
     {
         $reconocimientos = $this->baseQuery()->latest('id')->paginate($this->perPage);
         $stats = [
             'total' => Reconocimiento::count(),
-            'borrador' => Reconocimiento::where('estado','borrador')->count(),
-            'revision' => Reconocimiento::where('estado','revision')->count(),
-            'aprobado' => Reconocimiento::where('estado','aprobado')->count(),
-            'generado' => Reconocimiento::where('estado','generado')->count(),
-            'entregado' => Reconocimiento::where('estado','entregado')->count(),
-            'cancelado' => Reconocimiento::where('estado','cancelado')->count(),
+            'borrador' => Reconocimiento::where('estado', 'borrador')->count(),
+            'revision' => Reconocimiento::where('estado', 'revision')->count(),
+            'aprobado' => Reconocimiento::where('estado', 'aprobado')->count(),
+            'generado' => Reconocimiento::where('estado', 'generado')->count(),
+            'entregado' => Reconocimiento::where('estado', 'entregado')->count(),
+            'cancelado' => Reconocimiento::where('estado', 'cancelado')->count(),
         ];
 
         $query = http_build_query(array_filter([
             'ids' => $this->seleccionados ? implode(',', $this->seleccionados) : null,
-            'search' => $this->search ?: null, 'estado' => $this->estadoFiltro ?: null,
-            'evento' => $this->eventoFiltro ?: null, 'tipo' => $this->tipoFiltro ?: null,
-            'plantilla' => $this->plantillaFiltro ?: null, 'desde' => $this->fechaDesde ?: null,
+            'search' => $this->search ?: null,
+            'estado' => $this->estadoFiltro ?: null,
+            'evento' => $this->eventoFiltro ?: null,
+            'tipo' => $this->tipoFiltro ?: null,
+            'plantilla' => $this->plantillaFiltro ?: null,
+            'desde' => $this->fechaDesde ?: null,
             'hasta' => $this->fechaHasta ?: null,
         ]));
 
         return view('livewire.reconocimientos.mostrar-reconocimientos', [
-            'reconocimientos' => $reconocimientos, 'stats' => $stats,
+            'reconocimientos' => $reconocimientos,
+            'stats' => $stats,
             'eventos' => ReconocimientoEvento::orderByDesc('fecha')->get(),
             'tipos' => ReconocimientoTipo::orderBy('nombre')->get(),
             'plantillas' => ReconocimientoImagen::orderBy('nombre')->orderBy('id')->get(),
-            'downloadUrl' => route('descargar.reconocimientos').($query ? '?'.$query : ''),
+            'downloadUrl' => route('descargar.reconocimientos') . ($query ? '?' . $query : ''),
         ]);
     }
 }
