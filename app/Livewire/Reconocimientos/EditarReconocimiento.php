@@ -59,6 +59,7 @@ class EditarReconocimiento extends Component
         if($value && ($tipo=ReconocimientoTipo::find($value))){
             $this->descripcion=$tipo->descripcion;
             $this->reconocimiento_imagen_id=$tipo->reconocimiento_imagen_id ?: $this->reconocimiento_imagen_id;
+            $this->dispatch('reconocimiento-descripcion-actualizada', html: $this->descripcion);
         }
     }
 

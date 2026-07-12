@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.bunny.net">
 <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
 
-{{-- <script src="https://cdn.tiny.cloud/1/1ebweotq439cl3bk11wscr1wf0h3iemo2t74u6ve9sjcy7cl/tinymce/8/tinymce.min.js" referrerpolicy="origin" crossorigin="anonymous"></script> --}}
+<script src="https://cdn.jsdelivr.net/npm/tinymce@8/tinymce.min.js" referrerpolicy="origin"></script>
 
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

@@ -58,20 +58,26 @@
         .nombre {
             color: #006492;
             line-height: 1.05;
-
+            margin-top: 130px;
         }
 
         .lugar {
-            margin-top: 8px;
-
+            margin-top: 150px;
             color: #66851f;
         }
 
         .descripcion {
-            line-height: 1.5;
+            line-height: 1;
+
+            margin: 100px auto 0;
+            width: 750px;
         }
 
-        .fecha {}
+        .fecha {
+            margin-top: 50px;
+            font-size: 16px;
+            color: #262626;
+        }
 
         .evento {
             margin-bottom: 5px;
@@ -90,13 +96,14 @@
             left: 8%;
             right: 8%;
             width: 84%;
+
         }
 
         .tabla-firmas {
             width: 80%;
             border-collapse: separate;
             border-spacing: 14px 0;
-            margin: 0 auto;
+            margin: 80px auto 0;
         }
 
         .tabla-firmas+.tabla-firmas {
@@ -125,7 +132,7 @@
 
         .linea {
             border-top: 1px solid #333;
-            padding-top: 4px;
+            padding-top: 2px;
         }
 
         .nombre-firmante {
@@ -175,7 +182,7 @@
             $descTam = data_get($cfg, 'descripcion.tamano', 16);
 
             $fechaTop = data_get($cfg, 'fecha.top', 470);
-            $firmasTop = data_get($cfg, 'firmas.top', 540);
+            $firmasTop = data_get($cfg, 'firmas.top', 800);
 
             $dirs = $reconocimiento->directivos->sortBy('orden')->values();
 
@@ -216,16 +223,6 @@
                 {{ $reconocimiento->reconocimiento_a }}
             </div>
 
-            @if ($reconocimiento->lugar_obtenido)
-                <div class="bloque lugar"
-                    style="
-                        top: {{ $nombreTop + $nombreTam + 15 }}px;
-                        font-size: {{ max(12, $nombreTam - 16) }}px;
-                    ">
-                    {{ $reconocimiento->lugar_obtenido }}
-                </div>
-            @endif
-
             <div class="bloque descripcion" style="top: {{ $descTop }}px; font-size: {{ $descTam }}px;">
                 @if ($reconocimiento->evento)
                     <div class="evento">
@@ -240,8 +237,8 @@
                 {!! \App\Support\ReconocimientoHtml::limpiar($reconocimiento->descripcion) !!}
             </div>
 
-            <div class="bloque fecha" style="top: {{ $fechaTop }}px; font-size: 12px;">
-                {{ $reconocimiento->fecha?->translatedFormat('d \d\e F \d\e Y') }}
+            <div class="bloque fecha" style="top: {{ $fechaTop }}px; font-size: 15px; margin-left: 500px;">
+                Cd. Altamirano, Gro.,{{ $reconocimiento->fecha?->translatedFormat('d \d\e F \d\e Y') }}
             </div>
 
             @if ($dirs->isNotEmpty())

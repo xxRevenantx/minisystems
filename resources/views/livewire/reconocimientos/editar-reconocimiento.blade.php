@@ -41,7 +41,14 @@
         </div>
 
         <div class="mt-4">
-            <flux:textarea wire:model="descripcion" label="Descripción" badge="Obligatorio" rows="6" />
+            <x-tinymce-editor
+                model="descripcion"
+                editor-id="reconocimiento-descripcion-editar"
+                label="Descripción"
+                badge="Obligatorio"
+                :height="280"
+                placeholder="Escribe el motivo del reconocimiento..."
+                description="Puedes aplicar negritas, cursivas, subrayado y listas. El contenido se sanitiza antes de guardarse." />
         </div>
 
         <div class="mt-4 max-w-xs">

@@ -160,11 +160,15 @@
                     </section>
                 @endif
 
-                <div class="grid gap-4 md:grid-cols-[1fr_220px]">
-                    <flux:textarea wire:model.live.debounce.400ms="descripcion" label="Descripción"
-                        badge="Obligatorio" rows="6" maxlength="5000"
-                        placeholder="Motivo del reconocimiento"
-                        description="Puedes usar negritas y listas mediante un tipo reutilizable; el contenido se sanitiza antes de guardarse." />
+                <div class="grid items-start gap-4 md:grid-cols-[1fr_220px]">
+                    <x-tinymce-editor
+                        model="descripcion"
+                        editor-id="reconocimiento-descripcion-crear"
+                        label="Descripción"
+                        badge="Obligatorio"
+                        :height="270"
+                        placeholder="Escribe el motivo del reconocimiento..."
+                        description="Puedes aplicar negritas, cursivas, subrayado y listas. El contenido se sanitiza antes de guardarse." />
 
                     <flux:input wire:model.live="fecha" type="date" label="Fecha" badge="Obligatorio" />
                 </div>
@@ -262,8 +266,8 @@
                         @if($lugar_obtenido)
                             <div class="mt-2 text-sm font-bold text-[#88AC2E]">{{ $lugar_obtenido }}</div>
                         @endif
-                        <div class="mt-3 max-h-24 overflow-hidden text-xs leading-relaxed text-neutral-700">
-                            {{ \Illuminate\Support\Str::limit(strip_tags($descripcion ?: 'Aquí aparecerá la descripción del reconocimiento.'), 340) }}
+                        <div class="mt-3 max-h-24 overflow-hidden text-xs leading-relaxed text-neutral-700 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-1 [&_ul]:list-disc [&_ul]:pl-5">
+                            {!! \App\Support\ReconocimientoHtml::limpiar($descripcion ?: '<p>Aquí aparecerá la descripción del reconocimiento.</p>') !!}
                         </div>
                         <div class="mt-4 text-xs font-semibold">
                             {{ $fecha ? \Carbon\Carbon::parse($fecha)->format('d/m/Y') : 'Fecha' }}
