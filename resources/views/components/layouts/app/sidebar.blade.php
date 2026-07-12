@@ -30,14 +30,14 @@
 
 
         <flux:navlist variant="outline">
-            <flux:navlist.group :heading="__('Images Multiplies')" class="grid">
+            <flux:navlist.group :heading="__('Imágenes múltiples')" class="grid">
 
-                <flux:navlist.group :heading="__('Marco de imágenes')" expandable>
+                <flux:navlist.group :heading="__('Procesamiento de imágenes')" expandable>
 
-                    <flux:navlist.item icon="home" :href="route('marcos')" :current="request()->routeIs('marcos')"
-                        wire:navigate>{{ __('Marcos') }}</flux:navlist.item>
+                    <flux:navlist.item icon="rectangle-stack" :href="route('marcos')" :current="request()->routeIs('marcos')"
+                        wire:navigate>{{ __('Marcos adaptables') }}</flux:navlist.item>
 
-                    <flux:navlist.item icon="home" :href="route('images')" :current="request()->routeIs('images')"
+                    <flux:navlist.item icon="photo" :href="route('images')" :current="request()->routeIs('images')"
                         wire:navigate>{{ __('System Images') }}</flux:navlist.item>
 
                 </flux:navlist.group>
