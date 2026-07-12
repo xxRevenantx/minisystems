@@ -18,6 +18,9 @@
             <x-app-logo />
         </a>
 
+        <flux:button x-data x-on:click="$flux.dark = ! $flux.dark" icon="moon" variant="subtle"
+            aria-label="Toggle dark mode" />
+
         <flux:navlist variant="outline">
             <flux:navlist.group :heading="__('Platform')" class="grid">
                 <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')"
@@ -43,22 +46,30 @@
 
 
 
-        <flux:navlist>
-            <flux:navlist.group :heading="__('Reconocimientos')" expandable>
-                <flux:navlist>
+        @php
+            $puedeVerReconocimientos = auth()->user()?->puedeReconocimientos('ver') ?? false;
+            $puedeAdministrarReconocimientos = auth()->user()?->puedeReconocimientos('administrar') ?? false;
+        @endphp
 
-                    <flux:navlist.item icon="home" :href="route('reconocimiento.imagenes')"
-                        :current="request()->routeIs('reconocimiento.imagenes')" wire:navigate>
-                        {{ __('Diseños de reconocimientos') }}</flux:navlist.item>
-                    <flux:navlist.item icon="home" :href="route('reconocimiento')"
-                        :current="request()->routeIs('reconocimiento')" wire:navigate>{{ __('Gestión de reconocimientos') }}
-                    </flux:navlist.item>
+        @if ($puedeVerReconocimientos)
+            <flux:navlist>
+                <flux:navlist.group :heading="__('Reconocimientos')" expandable>
+                    <flux:navlist>
+                        @if ($puedeAdministrarReconocimientos)
+                            <flux:navlist.item icon="photo" :href="route('reconocimiento.imagenes')"
+                                :current="request()->routeIs('reconocimiento.imagenes')" wire:navigate>
+                                {{ __('Diseños de reconocimientos') }}
+                            </flux:navlist.item>
+                        @endif
 
-                </flux:navlist>
-
-            </flux:navlist.group>
-
-        </flux:navlist>
+                        <flux:navlist.item icon="document-text" :href="route('reconocimiento')"
+                            :current="request()->routeIs('reconocimiento')" wire:navigate>
+                            {{ __('Gestión de reconocimientos') }}
+                        </flux:navlist.item>
+                    </flux:navlist>
+                </flux:navlist.group>
+            </flux:navlist>
+        @endif
 
         <flux:navlist>
             <flux:navlist.group :heading="__('Credenciales')" expandable>

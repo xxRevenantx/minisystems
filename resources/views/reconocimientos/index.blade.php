@@ -1,14 +1,20 @@
-<x-layouts.app :title="__('MiniSystems - Reconocimientos')" >
-    <div class="relative overflow-hidden bg-white rounded-xl border border-neutral-200 dark:border-neutral-700 p-5 dark:bg-neutral-800">
-        <section class="space-y-4">
-            <header class="mb-4">
-                <h1 class="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">{{ __('Reconocimientos') }}</h1>
-                <p class="mt-1 text-sm text-neutral-600 dark:text-neutral-300">{{ __('Gestione los reconocimientos aquí.') }}</p>
-            </header>
+<x-layouts.app :title="__('MiniSystems - Reconocimientos')">
+    <div class="space-y-6">
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <flux:heading size="xl" level="1">{{ __('Reconocimientos') }}</flux:heading>
+                <flux:text class="mt-1">{{ __('Crea, administra y descarga reconocimientos institucionales.') }}</flux:text>
+            </div>
 
-            <livewire:reconocimientos.creacion-reconocimientos  />
-        </section>
+            @if(auth()->user()?->puedeReconocimientos('administrar'))
+                <flux:button href="{{ route('reconocimiento.imagenes') }}" variant="filled">
+                    {{ __('Diseños de reconocimientos') }}
+                </flux:button>
+            @endif
+        </div>
+
+        <flux:separator />
+
+        <livewire:reconocimientos.creacion-reconocimientos />
     </div>
-
-
 </x-layouts.app>

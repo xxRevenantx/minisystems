@@ -51,19 +51,22 @@ class User extends Authenticatable
         ];
     }
 
-
-
     protected static function booted(): void
     {
         static::created(function (User $user) {
+            // El primer usuario del sistema es el administrador principal.
+            // En una instalación nueva se crea después de ejecutar las migraciones,
+            // por eso sus permisos deben establecerse aquí y no depender solo del backfill.
+            $esAdministradorPrincipal = (int) $user->getKey() === 1;
+
             $user->permisoReconocimientos()->create([
                 'ver' => true,
-                'crear' => false,
-                'editar' => false,
-                'aprobar' => false,
+                'crear' => $esAdministradorPrincipal,
+                'editar' => $esAdministradorPrincipal,
+                'aprobar' => $esAdministradorPrincipal,
                 'descargar' => true,
-                'cancelar' => false,
-                'administrar' => false,
+                'cancelar' => $esAdministradorPrincipal,
+                'administrar' => $esAdministradorPrincipal,
             ]);
         });
     }
@@ -75,18 +78,24 @@ class User extends Authenticatable
 
     public function puedeReconocimientos(string $accion): bool
     {
+        // Protección de acceso para el administrador principal. Esto también
+        // corrige instalaciones existentes donde el usuario #1 recibió por
+        // error un registro de permisos limitado al crearse después de migrar.
+        if ((int) $this->getKey() === 1) {
+            return true;
+        }
+
         $permiso = $this->relationLoaded('permisoReconocimientos')
             ? $this->permisoReconocimientos
             : $this->permisoReconocimientos()->first();
 
-        // Compatibilidad: usuarios existentes conservan acceso hasta que se configure su registro.
-        return $permiso ? (bool) ($permiso->{$accion} ?? false) : (int) $this->getKey() === 1;
+        return $permiso ? (bool) ($permiso->{$accion} ?? false) : false;
     }
 
     /**
      * Get the user's initials
      */
-    public function initials(): string
+    public function initials()
     {
         return Str::of($this->name)
             ->explode(' ')

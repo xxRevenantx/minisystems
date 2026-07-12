@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\ReconocimientoPermiso;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -15,11 +16,24 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        User::factory()->create([
+        $admin = User::factory()->create([
             'name' => 'MiniSystem',
             'email' => 'minisystem@system.com',
             'password' => bcrypt('minisystem123'),
         ]);
+
+        ReconocimientoPermiso::updateOrCreate(
+            ['user_id' => $admin->id],
+            [
+                'ver' => true,
+                'crear' => true,
+                'editar' => true,
+                'aprobar' => true,
+                'descargar' => true,
+                'cancelar' => true,
+                'administrar' => true,
+            ]
+        );
 
         $this->call(DirectivoSeeder::class);
     }
