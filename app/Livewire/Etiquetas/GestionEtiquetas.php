@@ -38,6 +38,8 @@ class GestionEtiquetas extends Component
     public ?int $alumnoId = null;
     public ?int $personaId = null;
     public string $nombre = '';
+    public string $apellidoPaterno = '';
+    public string $apellidoMaterno = '';
     public string $nivel = '';
     public string $generacion = '';
     public ?string $grado = null;
@@ -79,6 +81,22 @@ class GestionEtiquetas extends Component
 
     public bool $modalPapelera = false;
 
+    public bool $modalEdicionMasiva = false;
+    public bool $mostrarVistaPreviaMasiva = false;
+    public array $vistaPreviaMasiva = [];
+    public int $totalVistaPreviaMasiva = 0;
+    public int $duplicadosVistaPreviaMasiva = 0;
+    public string $accionNivel = 'sin_cambios';
+    public string $valorNivel = '';
+    public string $accionGeneracion = 'sin_cambios';
+    public string $valorGeneracion = '';
+    public string $accionGrado = 'sin_cambios';
+    public string $valorGrado = '';
+    public string $accionGrupo = 'sin_cambios';
+    public string $valorGrupo = '';
+    public string $accionEstado = 'sin_cambios';
+    public string $valorEstado = 'activo';
+
     public array $niveles = [
         'Preescolar','Primaria','Secundaria','Bachillerato','Licenciatura','Personal','Curso','Taller','Otro',
     ];
@@ -94,7 +112,9 @@ class GestionEtiquetas extends Component
     {
         return [
             'personaId' => ['nullable', 'exists:personas,id'],
-            'nombre' => ['required', 'string', 'min:3', 'max:255'],
+            'nombre' => ['required', 'string', 'min:2', 'max:255'],
+            'apellidoPaterno' => ['nullable', 'string', 'max:255'],
+            'apellidoMaterno' => ['nullable', 'string', 'max:255'],
             'nivel' => ['required', Rule::in($this->niveles)],
             'generacion' => ['required', 'string', 'max:100'],
             'grado' => ['nullable', 'string', 'max:50'],
@@ -135,12 +155,19 @@ class GestionEtiquetas extends Component
             $this->resetPage();
             $this->seleccionados = [];
         }
+
+        if (str_starts_with((string) $property, 'accion') || str_starts_with((string) $property, 'valor')) {
+            $this->mostrarVistaPreviaMasiva = false;
+            $this->vistaPreviaMasiva = [];
+        }
     }
 
     public function updatedPersonaId($value): void
     {
         if ($value && ($persona = Persona::find($value))) {
             $this->nombre = $persona->nombre;
+            $this->apellidoPaterno = '';
+            $this->apellidoMaterno = '';
         }
     }
 
@@ -158,6 +185,8 @@ class GestionEtiquetas extends Component
         $this->alumnoId = $alumno->id;
         $this->personaId = $alumno->persona_id;
         $this->nombre = $alumno->nombre;
+        $this->apellidoPaterno = $alumno->apellido_paterno ?? '';
+        $this->apellidoMaterno = $alumno->apellido_materno ?? '';
         $this->nivel = $alumno->nivel;
         $this->generacion = $alumno->generacion;
         $this->grado = $alumno->grado;
@@ -175,6 +204,8 @@ class GestionEtiquetas extends Component
             'user_id' => auth()->id(),
             'persona_id' => $data['personaId'] ?: null,
             'nombre' => $this->normalizarNombre($data['nombre']),
+            'apellido_paterno' => filled($data['apellidoPaterno']) ? $this->normalizarNombre($data['apellidoPaterno']) : null,
+            'apellido_materno' => filled($data['apellidoMaterno']) ? $this->normalizarNombre($data['apellidoMaterno']) : null,
             'nivel' => $data['nivel'],
             'generacion' => Str::squish($data['generacion']),
             'grado' => filled($data['grado']) ? Str::squish($data['grado']) : null,
@@ -184,7 +215,10 @@ class GestionEtiquetas extends Component
 
         $duplicado = EtiquetaAlumno::query()
             ->when($this->alumnoId, fn (Builder $q) => $q->where('id', '!=', $this->alumnoId))
-            ->where('nombre', $payload['nombre'])->where('nivel', $payload['nivel'])
+            ->where('nombre', $payload['nombre'])
+            ->where(fn (Builder $q) => $payload['apellido_paterno'] === null ? $q->whereNull('apellido_paterno') : $q->where('apellido_paterno', $payload['apellido_paterno']))
+            ->where(fn (Builder $q) => $payload['apellido_materno'] === null ? $q->whereNull('apellido_materno') : $q->where('apellido_materno', $payload['apellido_materno']))
+            ->where('nivel', $payload['nivel'])
             ->where('generacion', $payload['generacion'])
             ->where(fn (Builder $q) => $payload['grado'] === null ? $q->whereNull('grado') : $q->where('grado', $payload['grado']))
             ->where(fn (Builder $q) => $payload['grupo'] === null ? $q->whereNull('grupo') : $q->where('grupo', $payload['grupo']))
@@ -196,10 +230,25 @@ class GestionEtiquetas extends Component
 
         $editando = (bool) $this->alumnoId;
         if ($this->alumnoId) {
-            EtiquetaAlumno::findOrFail($this->alumnoId)->update($payload);
+            $alumno = EtiquetaAlumno::findOrFail($this->alumnoId);
+            $alumno->update($payload);
         } else {
-            EtiquetaAlumno::create($payload);
+            $alumno = EtiquetaAlumno::create($payload);
         }
+
+        HistorialExportacion::create([
+            'user_id' => auth()->id(),
+            'tipo' => 'etiquetas',
+            'formato' => 'edicion',
+            'cantidad' => 1,
+            'configuracion' => [
+                'operacion' => $editando ? 'edicion_individual' : 'creacion_individual',
+                'alumnos' => [$alumno->id],
+                'campos' => array_keys($payload),
+            ],
+            'notas' => $editando ? 'Edición individual de alumno' : 'Alta individual de alumno',
+        ]);
+
         $this->modalAlumno = false;
         $this->limpiarAlumno();
         $this->dispatch('swal', icon: 'success', title: $editando ? 'Alumno actualizado' : 'Alumno registrado');
@@ -254,8 +303,103 @@ class GestionEtiquetas extends Component
         } else {
             abort(422);
         }
+        HistorialExportacion::create([
+            'user_id' => auth()->id(),
+            'tipo' => 'etiquetas',
+            'formato' => 'edicion',
+            'cantidad' => count($ids),
+            'configuracion' => [
+                'operacion' => 'accion_masiva',
+                'accion' => $accion,
+                'alumnos' => $ids,
+            ],
+            'notas' => 'Acción masiva: '.$accion,
+        ]);
+
         $this->seleccionados = [];
         $this->dispatch('swal', icon: 'success', title: 'Acción masiva completada');
+    }
+
+    public function abrirEdicionMasiva(): void
+    {
+        abort_unless(auth()->user()?->puedeEtiquetas('editar'), 403);
+
+        if (empty($this->seleccionados)) {
+            $this->dispatch('swal', icon: 'warning', title: 'Selecciona al menos un alumno');
+            return;
+        }
+
+        $this->resetEdicionMasiva();
+        $this->modalEdicionMasiva = true;
+    }
+
+    public function previsualizarEdicionMasiva(): void
+    {
+        abort_unless(auth()->user()?->puedeEtiquetas('editar'), 403);
+        $this->validate($this->reglasEdicionMasiva());
+
+        $resultado = $this->evaluarEdicionMasiva();
+        $this->vistaPreviaMasiva = $resultado['vista_previa'];
+        $this->totalVistaPreviaMasiva = $resultado['aplicables'];
+        $this->duplicadosVistaPreviaMasiva = $resultado['duplicados'];
+        $this->mostrarVistaPreviaMasiva = true;
+    }
+
+    public function aplicarEdicionMasiva(): void
+    {
+        abort_unless(auth()->user()?->puedeEtiquetas('editar'), 403);
+        $this->validate($this->reglasEdicionMasiva());
+
+        $resultado = $this->evaluarEdicionMasiva(true);
+        $actualizados = 0;
+        $idsActualizados = [];
+
+        DB::transaction(function () use ($resultado, &$actualizados, &$idsActualizados): void {
+            foreach ($resultado['registros'] as $registro) {
+                if ($registro['duplicado'] || $registro['cambios'] === []) {
+                    continue;
+                }
+
+                /** @var EtiquetaAlumno $alumno */
+                $alumno = $registro['alumno'];
+                $alumno->update($registro['payload']);
+                $actualizados++;
+                $idsActualizados[] = $alumno->id;
+            }
+
+            HistorialExportacion::create([
+                'user_id' => auth()->id(),
+                'tipo' => 'etiquetas',
+                'formato' => 'edicion',
+                'cantidad' => $actualizados,
+                'configuracion' => [
+                    'operacion' => 'edicion_masiva',
+                    'alumnos' => $idsActualizados,
+                    'campos' => $this->camposEdicionMasivaActivos(),
+                    'duplicados_omitidos' => $resultado['duplicados'],
+                ],
+                'notas' => 'Edición masiva desde el módulo de Etiquetas',
+            ]);
+        });
+
+        $omitidos = $resultado['duplicados'];
+        $this->seleccionados = [];
+        $this->modalEdicionMasiva = false;
+        $this->resetEdicionMasiva();
+        $this->resetPage();
+
+        $this->dispatch(
+            'swal',
+            icon: $omitidos > 0 ? 'warning' : 'success',
+            title: "{$actualizados} registro(s) actualizado(s)",
+            text: $omitidos > 0 ? "{$omitidos} duplicado(s) fueron omitidos." : 'Los cambios se guardaron correctamente.',
+        );
+    }
+
+    public function cerrarEdicionMasiva(): void
+    {
+        $this->modalEdicionMasiva = false;
+        $this->resetEdicionMasiva();
     }
 
     public function abrirImpresion(): void
@@ -456,19 +600,259 @@ class GestionEtiquetas extends Component
             $this->resetPage();
 
             $importados = $this->reporteImportacion['importados'];
+            $actualizados = $this->reporteImportacion['actualizados'];
             $omitidos = $this->reporteImportacion['omitidos'];
             $errores = $this->reporteImportacion['errores'];
 
+            HistorialExportacion::create([
+                'user_id' => auth()->id(),
+                'tipo' => 'etiquetas',
+                'formato' => 'xlsx',
+                'cantidad' => $importados + $actualizados,
+                'configuracion' => [
+                    'operacion' => 'importacion_actualizacion_excel',
+                    'importados' => $importados,
+                    'actualizados' => $actualizados,
+                    'duplicados_omitidos' => $omitidos,
+                    'errores' => count($errores),
+                ],
+                'notas' => 'Importación o actualización masiva desde Excel',
+            ]);
+
             $this->dispatch(
                 'swal',
-                icon: $errores ? 'warning' : 'success',
-                title: "{$importados} alumnos importados",
-                text: $omitidos.' duplicados omitidos · '.count($errores).' filas con error',
+                icon: $errores || $omitidos ? 'warning' : 'success',
+                title: ($importados + $actualizados).' registro(s) procesado(s)',
+                text: $importados.' nuevos · '.$actualizados.' actualizados · '.$omitidos.' duplicados omitidos · '.count($errores).' filas con error',
             );
         } catch (\Throwable $exception) {
             report($exception);
             $this->addError('archivoExcel', $exception->getMessage());
         }
+    }
+
+    private function reglasEdicionMasiva(): array
+    {
+        $accionesComunes = ['sin_cambios', 'reemplazar', 'rellenar_vacios'];
+        $accionesOpcionales = [...$accionesComunes, 'limpiar'];
+
+        return [
+            'accionNivel' => ['required', Rule::in($accionesComunes)],
+            'valorNivel' => [Rule::requiredIf(fn () => $this->accionNivel !== 'sin_cambios'), 'nullable', Rule::in($this->niveles)],
+            'accionGeneracion' => ['required', Rule::in($accionesComunes)],
+            'valorGeneracion' => [Rule::requiredIf(fn () => $this->accionGeneracion !== 'sin_cambios'), 'nullable', 'string', 'max:100'],
+            'accionGrado' => ['required', Rule::in($accionesOpcionales)],
+            'valorGrado' => [Rule::requiredIf(fn () => in_array($this->accionGrado, ['reemplazar', 'rellenar_vacios'], true)), 'nullable', 'string', 'max:50'],
+            'accionGrupo' => ['required', Rule::in($accionesOpcionales)],
+            'valorGrupo' => [Rule::requiredIf(fn () => in_array($this->accionGrupo, ['reemplazar', 'rellenar_vacios'], true)), 'nullable', 'string', 'max:50'],
+            'accionEstado' => ['required', Rule::in(['sin_cambios', 'reemplazar'])],
+            'valorEstado' => [Rule::requiredIf(fn () => $this->accionEstado === 'reemplazar'), 'nullable', Rule::in(['activo', 'inactivo'])],
+        ];
+    }
+
+    /**
+     * @return array{
+     *   vista_previa:array<int,array<string,mixed>>,
+     *   registros:array<int,array<string,mixed>>,
+     *   aplicables:int,
+     *   duplicados:int
+     * }
+     */
+    private function evaluarEdicionMasiva(bool $incluirModelos = false): array
+    {
+        $ids = collect($this->seleccionados)
+            ->filter(fn ($id) => is_numeric($id))
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        abort_if($ids->isEmpty(), 422, 'No hay alumnos seleccionados.');
+
+        $alumnos = EtiquetaAlumno::query()
+            ->whereIn('id', $ids)
+            ->orderBy('id')
+            ->get();
+
+        $firmasExternas = EtiquetaAlumno::query()
+            ->whereNotIn('id', $ids)
+            ->get([
+                'nombre', 'apellido_paterno', 'apellido_materno', 'nivel',
+                'generacion', 'grado', 'grupo',
+            ])
+            ->mapWithKeys(fn (EtiquetaAlumno $alumno) => [
+                $this->firmaDuplicado([
+                    'nombre' => $alumno->nombre,
+                    'apellido_paterno' => $alumno->apellido_paterno,
+                    'apellido_materno' => $alumno->apellido_materno,
+                    'nivel' => $alumno->nivel,
+                    'generacion' => $alumno->generacion,
+                    'grado' => $alumno->grado,
+                    'grupo' => $alumno->grupo,
+                ]) => true,
+            ]);
+
+        $firmasNuevas = [];
+        $vistaPrevia = [];
+        $registros = [];
+        $duplicados = 0;
+        $aplicables = 0;
+
+        foreach ($alumnos as $alumno) {
+            $payload = [
+                'nivel' => $this->resolverValorMasivo($alumno->nivel, $this->accionNivel, $this->valorNivel, false),
+                'generacion' => $this->resolverValorMasivo($alumno->generacion, $this->accionGeneracion, $this->valorGeneracion, false),
+                'grado' => $this->resolverValorMasivo($alumno->grado, $this->accionGrado, $this->valorGrado, true),
+                'grupo' => $this->resolverValorMasivo($alumno->grupo, $this->accionGrupo, $this->valorGrupo, true, true),
+                'activo' => $this->accionEstado === 'reemplazar'
+                    ? $this->valorEstado === 'activo'
+                    : (bool) $alumno->activo,
+            ];
+
+            $firma = $this->firmaDuplicado([
+                'nombre' => $alumno->nombre,
+                'apellido_paterno' => $alumno->apellido_paterno,
+                'apellido_materno' => $alumno->apellido_materno,
+                'nivel' => $payload['nivel'],
+                'generacion' => $payload['generacion'],
+                'grado' => $payload['grado'],
+                'grupo' => $payload['grupo'],
+            ]);
+
+            $duplicado = isset($firmasExternas[$firma]) || isset($firmasNuevas[$firma]);
+            if ($duplicado) {
+                $duplicados++;
+            } else {
+                $firmasNuevas[$firma] = true;
+            }
+
+            $cambios = [];
+            foreach ([
+                'nivel' => 'Nivel',
+                'generacion' => 'Generación',
+                'grado' => 'Grado',
+                'grupo' => 'Grupo',
+                'activo' => 'Estado',
+            ] as $campo => $etiqueta) {
+                $antes = $campo === 'activo'
+                    ? ($alumno->activo ? 'Activo' : 'Inactivo')
+                    : ($alumno->{$campo} ?? 'Vacío');
+                $despues = $campo === 'activo'
+                    ? ($payload[$campo] ? 'Activo' : 'Inactivo')
+                    : ($payload[$campo] ?? 'Vacío');
+
+                if ((string) $antes !== (string) $despues) {
+                    $cambios[$etiqueta] = [
+                        'antes' => $antes,
+                        'despues' => $despues,
+                    ];
+                }
+            }
+
+            if (! $duplicado && $cambios !== []) {
+                $aplicables++;
+            }
+
+            $item = [
+                'id' => $alumno->id,
+                'nombre' => $alumno->nombre_completo,
+                'cambios' => $cambios,
+                'duplicado' => $duplicado,
+            ];
+
+            if (count($vistaPrevia) < 60) {
+                $vistaPrevia[] = $item;
+            }
+
+            $registros[] = $item + [
+                'payload' => $payload,
+                'alumno' => $incluirModelos ? $alumno : null,
+            ];
+        }
+
+        return [
+            'vista_previa' => $vistaPrevia,
+            'registros' => $registros,
+            'aplicables' => $aplicables,
+            'duplicados' => $duplicados,
+        ];
+    }
+
+    private function resolverValorMasivo(
+        mixed $actual,
+        string $accion,
+        string $valor,
+        bool $permiteLimpiar,
+        bool $mayusculas = false,
+    ): mixed {
+        if ($accion === 'sin_cambios') {
+            return $actual;
+        }
+
+        if ($accion === 'limpiar' && $permiteLimpiar) {
+            return null;
+        }
+
+        if ($accion === 'rellenar_vacios' && filled($actual)) {
+            return $actual;
+        }
+
+        $normalizado = Str::squish($valor);
+        if ($mayusculas) {
+            $normalizado = Str::upper($normalizado);
+        }
+
+        return $normalizado !== '' ? $normalizado : null;
+    }
+
+    /** @param array<string,mixed> $datos */
+    private function firmaDuplicado(array $datos): string
+    {
+        return collect([
+            $datos['nombre'] ?? null,
+            $datos['apellido_paterno'] ?? null,
+            $datos['apellido_materno'] ?? null,
+            $datos['nivel'] ?? null,
+            $datos['generacion'] ?? null,
+            $datos['grado'] ?? null,
+            $datos['grupo'] ?? null,
+        ])
+            ->map(fn ($valor) => Str::lower(Str::ascii(Str::squish((string) ($valor ?? '')))))
+            ->implode('|');
+    }
+
+    /** @return array<int,string> */
+    private function camposEdicionMasivaActivos(): array
+    {
+        return collect([
+            'nivel' => $this->accionNivel,
+            'generacion' => $this->accionGeneracion,
+            'grado' => $this->accionGrado,
+            'grupo' => $this->accionGrupo,
+            'estado' => $this->accionEstado,
+        ])
+            ->reject(fn ($accion) => $accion === 'sin_cambios')
+            ->keys()
+            ->values()
+            ->all();
+    }
+
+    private function resetEdicionMasiva(): void
+    {
+        $this->accionNivel = 'sin_cambios';
+        $this->valorNivel = '';
+        $this->accionGeneracion = 'sin_cambios';
+        $this->valorGeneracion = '';
+        $this->accionGrado = 'sin_cambios';
+        $this->valorGrado = '';
+        $this->accionGrupo = 'sin_cambios';
+        $this->valorGrupo = '';
+        $this->accionEstado = 'sin_cambios';
+        $this->valorEstado = 'activo';
+        $this->mostrarVistaPreviaMasiva = false;
+        $this->vistaPreviaMasiva = [];
+        $this->totalVistaPreviaMasiva = 0;
+        $this->duplicadosVistaPreviaMasiva = 0;
+        $this->resetValidation();
     }
 
     private function consultaAlumnos(): Builder
@@ -477,6 +861,8 @@ class GestionEtiquetas extends Component
             ->when(trim($this->buscar) !== '', function (Builder $q) {
                 $buscar = trim($this->buscar);
                 $q->where(fn (Builder $sub) => $sub->where('nombre', 'like', "%{$buscar}%")
+                    ->orWhere('apellido_paterno', 'like', "%{$buscar}%")
+                    ->orWhere('apellido_materno', 'like', "%{$buscar}%")
                     ->orWhere('nivel', 'like', "%{$buscar}%")->orWhere('generacion', 'like', "%{$buscar}%")
                     ->orWhere('grado', 'like', "%{$buscar}%")->orWhere('grupo', 'like', "%{$buscar}%"));
             })
@@ -490,7 +876,7 @@ class GestionEtiquetas extends Component
 
     private function limpiarAlumno(): void
     {
-        $this->reset(['alumnoId','personaId','nombre','nivel','generacion','grado','grupo']);
+        $this->reset(['alumnoId','personaId','nombre','apellidoPaterno','apellidoMaterno','nivel','generacion','grado','grupo']);
         $this->activo = true;
         $this->resetValidation();
     }
@@ -514,7 +900,7 @@ class GestionEtiquetas extends Component
 
     public function render()
     {
-        $alumnos = $this->consultaAlumnos()->orderBy('nivel')->orderBy('generacion')->orderBy('grado')->orderBy('grupo')->orderBy('nombre')->paginate($this->porPagina);
+        $alumnos = $this->consultaAlumnos()->orderBy('nivel')->orderBy('generacion')->orderBy('grado')->orderBy('grupo')->orderBy('nombre')->orderBy('apellido_paterno')->orderBy('apellido_materno')->paginate($this->porPagina);
         $plantillas = EtiquetaPlantilla::query()->orderByDesc('es_predeterminada')->latest()->get();
         $plantillasActivas = $plantillas->where('activo', true);
         $personas = Persona::query()->where('activo', true)->orderBy('nombre')->limit(300)->get(['id','nombre']);

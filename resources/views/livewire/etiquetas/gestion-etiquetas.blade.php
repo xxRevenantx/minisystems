@@ -7,7 +7,7 @@
         </div>
     </div>
 
-    <div wire:loading.flex wire:target="guardarAlumno,guardarPlantilla,importarExcel,accionMasiva,eliminarAlumno,restaurarAlumno,eliminarDefinitivamente,establecerPredeterminada,eliminarPlantilla,seleccionarTodosFiltrados"
+    <div wire:loading.flex wire:target="guardarAlumno,guardarPlantilla,importarExcel,accionMasiva,aplicarEdicionMasiva,eliminarAlumno,restaurarAlumno,eliminarDefinitivamente,establecerPredeterminada,eliminarPlantilla,seleccionarTodosFiltrados"
         class="fixed inset-0 z-[120] items-center justify-center bg-slate-950/55 backdrop-blur-sm">
         <div class="flex items-center gap-3 rounded-2xl bg-white px-6 py-4 shadow-2xl dark:bg-zinc-900">
             <svg class="h-6 w-6 animate-spin text-[#006492]" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
@@ -55,7 +55,7 @@
 
     <div class="flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-white p-2 dark:border-zinc-800 dark:bg-zinc-950">
         @php
-            $tabsEtiquetas = ['alumnos'=>'Alumnos','plantillas'=>'Plantillas de fondo','historial'=>'Historial PDF'];
+            $tabsEtiquetas = ['alumnos'=>'Alumnos','plantillas'=>'Plantillas de fondo','historial'=>'Historial'];
             if (auth()->user()?->puedeEtiquetas('administrar')) $tabsEtiquetas['permisos'] = 'Permisos';
         @endphp
         @foreach($tabsEtiquetas as $value=>$label)
@@ -77,11 +77,21 @@
                     <flux:select wire:model.live="filtroGrado" class="rounded-2xl"><flux:select.option value="">Todos los grados</flux:select.option>@foreach($grados as $item)<flux:select.option value="{{ $item }}">{{ $item }}</flux:select.option>@endforeach</flux:select>
                     <flux:select wire:model.live="filtroGrupo" class="rounded-2xl"><flux:select.option value="">Todos los grupos</flux:select.option>@foreach($grupos as $item)<flux:select.option value="{{ $item }}">{{ $item }}</flux:select.option>@endforeach</flux:select>
                     @if(auth()->user()?->puedeEtiquetas('descargar'))
-                        <a href="{{ route('etiquetas.excel.exportar', ['buscar'=>$buscar,'nivel'=>$filtroNivel,'generacion'=>$filtroGeneracion,'grado'=>$filtroGrado,'grupo'=>$filtroGrupo,'estado'=>$filtroEstado]) }}"
-                            x-on:click="iniciarExportacion()"
-                            class="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-black text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950/30 dark:hover:bg-emerald-950/50">
-                            <flux:icon name="arrow-down-tray" class="h-4 w-4" /> Exportar filtrados
-                        </a>
+                        <details class="group relative">
+                            <summary class="flex cursor-pointer list-none items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-black text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950/30">
+                                <flux:icon name="table-cells" class="h-4 w-4" /> Exportar Excel
+                                <flux:icon name="chevron-down" class="h-4 w-4 transition group-open:rotate-180" />
+                            </summary>
+                            <div class="absolute right-0 z-30 mt-2 w-72 overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-xl dark:border-zinc-700 dark:bg-zinc-900">
+                                <p class="px-3 pb-1 pt-2 text-[10px] font-black uppercase tracking-widest text-slate-400">Reporte</p>
+                                <a href="{{ route('etiquetas.excel.exportar', ['alcance'=>'filtrados','tipo'=>'reporte','buscar'=>$buscar,'nivel'=>$filtroNivel,'generacion'=>$filtroGeneracion,'grado'=>$filtroGrado,'grupo'=>$filtroGrupo,'estado'=>$filtroEstado]) }}" x-on:click="iniciarExportacion()" class="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold hover:bg-slate-100 dark:hover:bg-zinc-800"><flux:icon name="funnel" class="h-4 w-4" /> Registros filtrados</a>
+                                <a href="{{ route('etiquetas.excel.exportar', ['alcance'=>'todos','tipo'=>'reporte']) }}" x-on:click="iniciarExportacion()" class="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold hover:bg-slate-100 dark:hover:bg-zinc-800"><flux:icon name="users" class="h-4 w-4" /> Todos los registros</a>
+                                <div class="my-2 border-t border-slate-100 dark:border-zinc-800"></div>
+                                <p class="px-3 pb-1 text-[10px] font-black uppercase tracking-widest text-lime-700">Excel editable</p>
+                                <a href="{{ route('etiquetas.excel.exportar', ['alcance'=>'filtrados','tipo'=>'edicion','buscar'=>$buscar,'nivel'=>$filtroNivel,'generacion'=>$filtroGeneracion,'grado'=>$filtroGrado,'grupo'=>$filtroGrupo,'estado'=>$filtroEstado]) }}" x-on:click="iniciarExportacion()" class="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold hover:bg-lime-50 dark:hover:bg-lime-950/20"><flux:icon name="pencil-square" class="h-4 w-4" /> Editar filtrados en Excel</a>
+                                <a href="{{ route('etiquetas.excel.exportar', ['alcance'=>'todos','tipo'=>'edicion']) }}" x-on:click="iniciarExportacion()" class="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold hover:bg-lime-50 dark:hover:bg-lime-950/20"><flux:icon name="document-arrow-down" class="h-4 w-4" /> Editar todos en Excel</a>
+                            </div>
+                        </details>
                     @endif
                     @if(auth()->user()?->puedeEtiquetas('eliminar'))
                         <flux:button type="button" wire:click="$set('modalPapelera', true)" icon="trash" class="rounded-2xl border border-slate-200 bg-white text-slate-600 dark:border-zinc-700 dark:bg-zinc-900">Papelera</flux:button>
@@ -95,7 +105,24 @@
                     <div class="flex flex-wrap gap-2">
                         <flux:button type="button" wire:click="seleccionarTodosFiltrados" class="rounded-xl bg-white px-3 py-2 text-xs font-black text-sky-700 dark:bg-zinc-900">Seleccionar todos los filtrados</flux:button>
                         <flux:button type="button" wire:click="limpiarSeleccion" class="rounded-xl bg-white px-3 py-2 text-xs font-black text-slate-600 dark:bg-zinc-900">Limpiar</flux:button>
+                        @if(auth()->user()?->puedeEtiquetas('descargar'))
+                            <form method="POST" action="{{ route('etiquetas.excel.exportar.seleccionados') }}" x-on:submit="iniciarExportacion()">
+                                @csrf
+                                <input type="hidden" name="alcance" value="seleccionados">
+                                <input type="hidden" name="tipo" value="reporte">
+                                <input type="hidden" name="alumnos" value='@json(array_values($seleccionados))'>
+                                <button type="submit" class="inline-flex items-center gap-1 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-black text-white"><flux:icon name="arrow-down-tray" class="h-4 w-4" /> Exportar seleccionados</button>
+                            </form>
+                        @endif
                         @if(auth()->user()?->puedeEtiquetas('editar'))
+                            <flux:button type="button" wire:click="abrirEdicionMasiva" icon="pencil-square" class="rounded-xl bg-violet-600 px-3 py-2 text-xs font-black text-white">Editar seleccionados</flux:button>
+                            <form method="POST" action="{{ route('etiquetas.excel.exportar.seleccionados') }}" x-on:submit="iniciarExportacion()">
+                                @csrf
+                                <input type="hidden" name="alcance" value="seleccionados">
+                                <input type="hidden" name="tipo" value="edicion">
+                                <input type="hidden" name="alumnos" value='@json(array_values($seleccionados))'>
+                                <button type="submit" class="inline-flex items-center gap-1 rounded-xl border border-lime-300 bg-white px-3 py-2 text-xs font-black text-lime-700 dark:bg-zinc-900"><flux:icon name="table-cells" class="h-4 w-4" /> Editar en Excel</button>
+                            </form>
                             <flux:button type="button" wire:click="accionMasiva('activar')" class="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-black text-white">Activar</flux:button>
                             <flux:button type="button" wire:click="accionMasiva('desactivar')" class="rounded-xl bg-amber-500 px-3 py-2 text-xs font-black text-white">Desactivar</flux:button>
                         @endif
@@ -117,14 +144,22 @@
                         @forelse($alumnos as $alumno)
                             <tr wire:key="etiqueta-alumno-{{ $alumno->id }}" class="transition hover:bg-sky-50/50 dark:hover:bg-zinc-900/60">
                                 <td class="px-4 py-4 text-center"><flux:checkbox wire:model.live="seleccionados" value="{{ $alumno->id }}" /></td>
-                                <td class="px-4 py-4"><div class="flex items-center gap-3"><div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#006492] to-sky-400 text-sm font-black text-white">{{ collect(explode(' ', $alumno->nombre))->take(2)->map(fn($v)=>mb_substr($v,0,1))->implode('') }}</div><div><p class="font-black text-slate-900 dark:text-white">{{ $alumno->nombre }}</p>@if($alumno->persona_id)<p class="text-xs text-sky-600">Vinculado a Personas</p>@endif</div></div></td>
+                                <td class="px-4 py-4"><div class="flex items-center gap-3"><div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#006492] to-sky-400 text-sm font-black text-white">{{ $alumno->iniciales }}</div><div><p class="font-black text-slate-900 dark:text-white">{{ $alumno->nombre_completo }}</p>@if($alumno->persona_id)<p class="text-xs text-sky-600">Vinculado a Personas</p>@endif</div></div></td>
                                 <td class="px-4 py-4 text-sm font-bold text-slate-700 dark:text-zinc-200">{{ $alumno->nivel }}</td>
                                 <td class="px-4 py-4 text-sm text-slate-600 dark:text-zinc-300">{{ $alumno->generacion }}</td>
                                 <td class="px-4 py-4 text-sm text-slate-600 dark:text-zinc-300">{{ collect([$alumno->grado, $alumno->grupo ? 'Grupo '.$alumno->grupo : null])->filter()->implode(' · ') ?: 'Opcional no capturado' }}</td>
                                 <td class="px-4 py-4"><span class="rounded-full px-2.5 py-1 text-xs font-black {{ $alumno->activo ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-slate-100 text-slate-500 dark:bg-zinc-800' }}">{{ $alumno->activo ? 'Activo' : 'Inactivo' }}</span></td>
                                 <td class="px-4 py-4"><div class="flex gap-2">
-                                    @if(auth()->user()?->puedeEtiquetas('editar'))<flux:button type="button" wire:click="abrirEditarAlumno({{ $alumno->id }})" icon="pencil-square" size="sm" class="rounded-xl border border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950/30" />@endif
-                                    @if(auth()->user()?->puedeEtiquetas('eliminar'))<button type="button" x-on:click="confirmarEliminarAlumno({{ $alumno->id }}, @js($alumno->nombre))" class="rounded-xl border border-red-200 bg-red-50 p-2 text-red-700 dark:border-red-900 dark:bg-red-950/30"><flux:icon name="trash" class="h-4 w-4" /></button>@endif
+                                    @if(auth()->user()?->puedeEtiquetas('editar'))
+                                        <flux:button type="button" wire:click="abrirEditarAlumno({{ $alumno->id }})" icon="pencil-square" size="sm" class="rounded-xl border border-amber-200 bg-amber-50 px-3 text-amber-700 dark:border-amber-900 dark:bg-amber-950/30">Editar</flux:button>
+                                    @endif
+                                    @if(auth()->user()?->puedeEtiquetas('descargar'))
+                                        <a href="{{ route('etiquetas.excel.exportar', ['alcance'=>'individual','tipo'=>'reporte','id'=>$alumno->id]) }}" x-on:click="iniciarExportacion()" title="Exportar reporte individual" class="inline-flex items-center gap-1 rounded-xl border border-emerald-200 bg-emerald-50 px-2.5 py-2 text-xs font-black text-emerald-700"><flux:icon name="arrow-down-tray" class="h-4 w-4" /> Excel</a>
+                                        @if(auth()->user()?->puedeEtiquetas('editar'))
+                                            <a href="{{ route('etiquetas.excel.exportar', ['alcance'=>'individual','tipo'=>'edicion','id'=>$alumno->id]) }}" x-on:click="iniciarExportacion()" title="Descargar Excel editable" class="inline-flex items-center justify-center rounded-xl border border-lime-200 bg-lime-50 p-2 text-lime-700"><flux:icon name="table-cells" class="h-4 w-4" /></a>
+                                        @endif
+                                    @endif
+                                    @if(auth()->user()?->puedeEtiquetas('eliminar'))<button type="button" x-on:click="confirmarEliminarAlumno({{ $alumno->id }}, @js($alumno->nombre_completo))" class="rounded-xl border border-red-200 bg-red-50 p-2 text-red-700 dark:border-red-900 dark:bg-red-950/30"><flux:icon name="trash" class="h-4 w-4" /></button>@endif
                                 </div></td>
                             </tr>
                         @empty
@@ -150,8 +185,8 @@
         </section>
     @elseif($tab === 'historial')
         <section class="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-            <div class="border-b border-slate-200 p-5 dark:border-zinc-800"><h2 class="text-lg font-black">Últimas generaciones de PDF</h2><p class="text-sm text-slate-500">Registro de vistas previas y descargas del módulo.</p></div>
-            <div class="divide-y divide-slate-100 dark:divide-zinc-900">@forelse($historial as $item)<div class="flex flex-col gap-3 p-5 md:flex-row md:items-center md:justify-between"><div><p class="font-black text-slate-900 dark:text-white">{{ data_get($item->configuracion, 'plantilla', 'Plantilla de etiquetas') }}</p><p class="mt-1 text-xs text-slate-500">{{ $item->created_at->format('d/m/Y H:i') }} · {{ $item->notas }}</p></div><div class="flex gap-2"><span class="rounded-full bg-sky-100 px-3 py-1 text-xs font-black text-sky-700">{{ $item->cantidad }} etiquetas</span><span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">{{ data_get($item->configuracion, 'modo') === 'repetir' ? 'Alumno repetido' : 'Alumnos diferentes' }}</span></div></div>@empty<div class="p-14 text-center text-slate-500">Todavía no se han generado PDFs de etiquetas.</div>@endforelse</div>
+            <div class="border-b border-slate-200 p-5 dark:border-zinc-800"><h2 class="text-lg font-black">Actividad de Etiquetas</h2><p class="text-sm text-slate-500">Exportaciones, importaciones, generación de PDF y ediciones individuales o masivas.</p></div>
+            <div class="divide-y divide-slate-100 dark:divide-zinc-900">@forelse($historial as $item)<div class="flex flex-col gap-3 p-5 md:flex-row md:items-center md:justify-between"><div><p class="font-black text-slate-900 dark:text-white">{{ data_get($item->configuracion, 'plantilla', $item->notas ?: 'Actividad de etiquetas') }}</p><p class="mt-1 text-xs text-slate-500">{{ $item->created_at->format('d/m/Y H:i') }} · {{ $item->notas }}</p></div><div class="flex gap-2"><span class="rounded-full bg-sky-100 px-3 py-1 text-xs font-black text-sky-700">{{ $item->cantidad }} registro(s)</span><span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-black uppercase text-slate-600">{{ $item->formato }}</span></div></div>@empty<div class="p-14 text-center text-slate-500">Todavía no hay actividad registrada en este módulo.</div>@endforelse</div>
         </section>
     @else
         <section class="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
@@ -168,7 +203,9 @@
                     <div class="rounded-2xl border border-sky-100 bg-sky-50 p-4 text-sm text-sky-800 dark:border-sky-900 dark:bg-sky-950/20 dark:text-sky-200">Puedes vincular una persona existente para completar el nombre, pero el registro de Etiquetas seguirá siendo independiente.</div>
                     <div class="grid gap-4 md:grid-cols-2">
                         <label class="text-sm font-bold md:col-span-2">Vincular con Personas (opcional)<flux:select wire:model.live="personaId" class="mt-1 w-full rounded-2xl"><flux:select.option value="">Sin vínculo</flux:select.option>@foreach($personas as $persona)<flux:select.option value="{{ $persona->id }}">{{ $persona->nombre }}</flux:select.option>@endforeach</flux:select>@error('personaId')<span class="text-xs text-red-600">{{ $message }}</span>@enderror</label>
-                        <label class="text-sm font-bold md:col-span-2">Nombre completo *<flux:input wire:model="nombre" class="mt-1 w-full rounded-2xl uppercase" placeholder="NOMBRE COMPLETO" />@error('nombre')<span class="text-xs text-red-600">{{ $message }}</span>@enderror</label>
+                        <label class="text-sm font-bold md:col-span-2">Nombre(s) *<flux:input wire:model="nombre" class="mt-1 w-full rounded-2xl uppercase" placeholder="KARLA JOLETT" />@error('nombre')<span class="text-xs text-red-600">{{ $message }}</span>@enderror</label>
+                        <label class="text-sm font-bold">Apellido paterno<flux:input wire:model="apellidoPaterno" class="mt-1 w-full rounded-2xl uppercase" placeholder="GÓMEZ" />@error('apellidoPaterno')<span class="text-xs text-red-600">{{ $message }}</span>@enderror</label>
+                        <label class="text-sm font-bold">Apellido materno<flux:input wire:model="apellidoMaterno" class="mt-1 w-full rounded-2xl uppercase" placeholder="SOLÍS" />@error('apellidoMaterno')<span class="text-xs text-red-600">{{ $message }}</span>@enderror</label>
                         <label class="text-sm font-bold">Nivel *<flux:select wire:model="nivel" class="mt-1 w-full rounded-2xl"><flux:select.option value="">Seleccionar</flux:select.option>@foreach($niveles as $item)<flux:select.option value="{{ $item }}">{{ $item }}</flux:select.option>@endforeach</flux:select>@error('nivel')<span class="text-xs text-red-600">{{ $message }}</span>@enderror</label>
                         <label class="text-sm font-bold">Generación *<flux:input wire:model="generacion" class="mt-1 w-full rounded-2xl" placeholder="2023-2026" />@error('generacion')<span class="text-xs text-red-600">{{ $message }}</span>@enderror</label>
                         <label class="text-sm font-bold">Grado (opcional)<flux:input wire:model="grado" class="mt-1 w-full rounded-2xl" placeholder="3°" />@error('grado')<span class="text-xs text-red-600">{{ $message }}</span>@enderror</label>
@@ -177,6 +214,147 @@
                     <label class="flex items-center justify-between rounded-2xl border border-slate-200 p-4 dark:border-zinc-800"><span><strong class="block text-sm">Registro activo</strong><small class="text-xs text-slate-500">Solo los registros activos pueden imprimirse.</small></span><flux:switch wire:model="activo" /></label>
                     <div class="flex justify-end gap-3 border-t border-slate-200 pt-5 dark:border-zinc-800"><flux:button type="button" wire:click="$set('modalAlumno', false)" class="rounded-2xl border border-slate-300">Cancelar</flux:button><flux:button type="submit" class="rounded-2xl bg-[#006492] px-6 text-white" wire:loading.attr="disabled"><span wire:loading.remove wire:target="guardarAlumno">{{ $alumnoId ? 'Guardar cambios' : 'Crear alumno' }}</span><span wire:loading wire:target="guardarAlumno">Guardando...</span></flux:button></div>
                 </form>
+            </div>
+        </div>
+    @endif
+
+    @if($modalEdicionMasiva)
+        <div class="fixed inset-0 z-[105] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm" wire:keydown.escape="cerrarEdicionMasiva">
+            <div class="max-h-[94vh] w-full max-w-6xl overflow-hidden rounded-[2rem] bg-white shadow-2xl dark:bg-zinc-950">
+                <header class="flex items-center justify-between bg-gradient-to-r from-violet-700 to-indigo-600 px-6 py-5 text-white">
+                    <div>
+                        <p class="text-xs font-black uppercase tracking-[.2em] text-white/70">Edición controlada</p>
+                        <h3 class="text-xl font-black">Editar {{ count($seleccionados) }} alumno(s)</h3>
+                    </div>
+                    <button type="button" wire:click="cerrarEdicionMasiva" class="rounded-xl bg-white/15 p-2"><flux:icon name="x-mark" class="h-5 w-5" /></button>
+                </header>
+
+                <div class="grid max-h-[82vh] overflow-y-auto lg:grid-cols-[1fr_1fr]">
+                    <section class="space-y-5 border-b border-slate-200 p-6 dark:border-zinc-800 lg:border-b-0 lg:border-r">
+                        <div class="rounded-2xl border border-violet-100 bg-violet-50 p-4 text-sm text-violet-900 dark:border-violet-900 dark:bg-violet-950/20 dark:text-violet-200">
+                            Solo se modificarán los campos elegidos. Puedes reemplazar valores, rellenar únicamente los vacíos o limpiar grado y grupo.
+                        </div>
+
+                        @php
+                            $accionesComunes = [
+                                'sin_cambios' => 'No modificar',
+                                'reemplazar' => 'Reemplazar en todos',
+                                'rellenar_vacios' => 'Rellenar solo vacíos',
+                            ];
+                        @endphp
+
+                        <div class="grid gap-4 md:grid-cols-2">
+                            <div class="rounded-2xl border border-slate-200 p-4 dark:border-zinc-800">
+                                <p class="text-sm font-black">Nivel</p>
+                                <flux:select wire:model.live="accionNivel" class="mt-2 rounded-xl">
+                                    @foreach($accionesComunes as $valor=>$texto)<flux:select.option value="{{ $valor }}">{{ $texto }}</flux:select.option>@endforeach
+                                </flux:select>
+                                @if($accionNivel !== 'sin_cambios')
+                                    <flux:select wire:model="valorNivel" class="mt-2 rounded-xl"><flux:select.option value="">Seleccionar nivel</flux:select.option>@foreach($niveles as $item)<flux:select.option value="{{ $item }}">{{ $item }}</flux:select.option>@endforeach</flux:select>
+                                    @error('valorNivel')<span class="mt-1 block text-xs text-red-600">{{ $message }}</span>@enderror
+                                @endif
+                            </div>
+
+                            <div class="rounded-2xl border border-slate-200 p-4 dark:border-zinc-800">
+                                <p class="text-sm font-black">Generación</p>
+                                <flux:select wire:model.live="accionGeneracion" class="mt-2 rounded-xl">
+                                    @foreach($accionesComunes as $valor=>$texto)<flux:select.option value="{{ $valor }}">{{ $texto }}</flux:select.option>@endforeach
+                                </flux:select>
+                                @if($accionGeneracion !== 'sin_cambios')
+                                    <flux:input wire:model="valorGeneracion" class="mt-2 rounded-xl" placeholder="2023-2026" />
+                                    @error('valorGeneracion')<span class="mt-1 block text-xs text-red-600">{{ $message }}</span>@enderror
+                                @endif
+                            </div>
+
+                            <div class="rounded-2xl border border-slate-200 p-4 dark:border-zinc-800">
+                                <p class="text-sm font-black">Grado</p>
+                                <flux:select wire:model.live="accionGrado" class="mt-2 rounded-xl">
+                                    @foreach($accionesComunes as $valor=>$texto)<flux:select.option value="{{ $valor }}">{{ $texto }}</flux:select.option>@endforeach
+                                    <flux:select.option value="limpiar">Limpiar este campo</flux:select.option>
+                                </flux:select>
+                                @if(in_array($accionGrado, ['reemplazar','rellenar_vacios'], true))
+                                    <flux:input wire:model="valorGrado" class="mt-2 rounded-xl" placeholder="3°" />
+                                    @error('valorGrado')<span class="mt-1 block text-xs text-red-600">{{ $message }}</span>@enderror
+                                @endif
+                            </div>
+
+                            <div class="rounded-2xl border border-slate-200 p-4 dark:border-zinc-800">
+                                <p class="text-sm font-black">Grupo</p>
+                                <flux:select wire:model.live="accionGrupo" class="mt-2 rounded-xl">
+                                    @foreach($accionesComunes as $valor=>$texto)<flux:select.option value="{{ $valor }}">{{ $texto }}</flux:select.option>@endforeach
+                                    <flux:select.option value="limpiar">Limpiar este campo</flux:select.option>
+                                </flux:select>
+                                @if(in_array($accionGrupo, ['reemplazar','rellenar_vacios'], true))
+                                    <flux:input wire:model="valorGrupo" class="mt-2 rounded-xl uppercase" placeholder="A" />
+                                    @error('valorGrupo')<span class="mt-1 block text-xs text-red-600">{{ $message }}</span>@enderror
+                                @endif
+                            </div>
+
+                            <div class="rounded-2xl border border-slate-200 p-4 dark:border-zinc-800 md:col-span-2">
+                                <p class="text-sm font-black">Estado</p>
+                                <div class="mt-2 grid gap-2 md:grid-cols-2">
+                                    <flux:select wire:model.live="accionEstado" class="rounded-xl">
+                                        <flux:select.option value="sin_cambios">No modificar</flux:select.option>
+                                        <flux:select.option value="reemplazar">Cambiar en todos</flux:select.option>
+                                    </flux:select>
+                                    @if($accionEstado === 'reemplazar')
+                                        <flux:select wire:model="valorEstado" class="rounded-xl"><flux:select.option value="activo">Activo</flux:select.option><flux:select.option value="inactivo">Inactivo</flux:select.option></flux:select>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-wrap justify-end gap-3 border-t border-slate-200 pt-5 dark:border-zinc-800">
+                            <flux:button type="button" wire:click="cerrarEdicionMasiva" class="rounded-2xl border">Cancelar</flux:button>
+                            <flux:button type="button" wire:click="previsualizarEdicionMasiva" icon="eye" class="rounded-2xl bg-violet-600 px-5 text-white">Vista previa</flux:button>
+                        </div>
+                    </section>
+
+                    <aside class="space-y-4 bg-slate-50 p-6 dark:bg-zinc-900/60">
+                        <div>
+                            <p class="text-xs font-black uppercase tracking-widest text-slate-400">Antes de guardar</p>
+                            <h4 class="mt-1 text-lg font-black">Vista previa de cambios</h4>
+                        </div>
+
+                        @if(!$mostrarVistaPreviaMasiva)
+                            <div class="rounded-3xl border-2 border-dashed border-slate-300 p-10 text-center dark:border-zinc-700">
+                                <flux:icon name="document-magnifying-glass" class="mx-auto h-10 w-10 text-slate-300" />
+                                <p class="mt-3 text-sm font-black text-slate-600 dark:text-zinc-300">Configura los campos y presiona “Vista previa”.</p>
+                            </div>
+                        @else
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="rounded-2xl bg-white p-4 text-center shadow-sm dark:bg-zinc-950"><strong class="block text-2xl text-emerald-600">{{ $totalVistaPreviaMasiva }}</strong><small class="text-slate-500">Con cambios aplicables</small></div>
+                                <div class="rounded-2xl bg-white p-4 text-center shadow-sm dark:bg-zinc-950"><strong class="block text-2xl text-amber-600">{{ $duplicadosVistaPreviaMasiva }}</strong><small class="text-slate-500">Duplicados omitidos</small></div>
+                            </div>
+
+                            <div class="max-h-[45vh] space-y-3 overflow-y-auto pr-1">
+                                @foreach($vistaPreviaMasiva as $item)
+                                    <article class="rounded-2xl border p-4 {{ $item['duplicado'] ? 'border-amber-300 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/20' : 'border-slate-200 bg-white dark:border-zinc-800 dark:bg-zinc-950' }}">
+                                        <div class="flex items-start justify-between gap-3"><p class="text-sm font-black">{{ $item['nombre'] }}</p>@if($item['duplicado'])<span class="rounded-full bg-amber-200 px-2 py-1 text-[10px] font-black text-amber-800">OMITIR</span>@endif</div>
+                                        @if($item['cambios'])
+                                            <div class="mt-3 space-y-1 text-xs">
+                                                @foreach($item['cambios'] as $campo=>$cambio)
+                                                    <p><strong>{{ $campo }}:</strong> <span class="text-slate-400 line-through">{{ $cambio['antes'] }}</span> <span class="mx-1">→</span> <span class="font-bold text-emerald-700">{{ $cambio['despues'] }}</span></p>
+                                                @endforeach
+                                            </div>
+                                        @else
+                                            <p class="mt-2 text-xs text-slate-400">Sin cambios para este registro.</p>
+                                        @endif
+                                    </article>
+                                @endforeach
+                            </div>
+
+                            @if(count($vistaPreviaMasiva) < count($seleccionados))
+                                <p class="text-center text-xs text-slate-400">Se muestran los primeros {{ count($vistaPreviaMasiva) }} registros.</p>
+                            @endif
+
+                            <flux:button type="button" wire:click="aplicarEdicionMasiva" wire:loading.attr="disabled" icon="check" class="w-full rounded-2xl bg-emerald-600 py-3 text-white">
+                                <span wire:loading.remove wire:target="aplicarEdicionMasiva">Confirmar y guardar cambios</span>
+                                <span wire:loading wire:target="aplicarEdicionMasiva">Guardando...</span>
+                            </flux:button>
+                        @endif
+                    </aside>
+                </div>
             </div>
         </div>
     @endif
@@ -200,7 +378,41 @@
     @endif
 
     @if($modalImportar)
-        <div class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm"><div class="w-full max-w-2xl overflow-hidden rounded-[2rem] bg-white shadow-2xl dark:bg-zinc-950"><header class="flex items-center justify-between bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-5 text-white"><div><p class="text-xs font-black uppercase tracking-widest text-white/70">Carga masiva</p><h3 class="text-xl font-black">Importar alumnos desde Excel</h3></div><button type="button" wire:click="$set('modalImportar', false)" class="rounded-xl bg-white/15 p-2"><flux:icon name="x-mark" class="h-5 w-5" /></button></header><form wire:submit="importarExcel" class="space-y-5 p-6"><a href="{{ route('etiquetas.excel.plantilla') }}" x-on:click="iniciarExportacion()" class="flex items-center justify-between rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800 transition hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/40"><span><strong class="block text-sm">Descargar plantilla oficial .xlsx</strong><small>Incluye instrucciones, ejemplos y catálogo de niveles.</small></span><flux:icon name="arrow-down-tray" class="h-6 w-6" /></a><label class="block rounded-3xl border-2 border-dashed border-slate-300 p-8 text-center dark:border-zinc-700"><flux:icon name="document-arrow-up" class="mx-auto h-10 w-10 text-slate-400" /><span class="mt-3 block text-sm font-black">Selecciona el archivo completado</span><flux:input type="file" wire:model="archivoExcel" accept=".xlsx,.xls" class="mt-4 w-full rounded-2xl" />@if($archivoExcel)<span class="mt-3 block text-xs font-bold text-emerald-700">Archivo listo: {{ $archivoExcel->getClientOriginalName() }}</span>@endif</label>@error('archivoExcel')<p class="rounded-xl bg-red-50 p-3 text-sm text-red-700">{{ $message }}</p>@enderror @if($reporteImportacion)<div class="rounded-2xl border border-slate-200 p-4"><div class="grid grid-cols-3 gap-3 text-center"><div><strong class="block text-2xl text-emerald-600">{{ $reporteImportacion['importados'] }}</strong><small>Importados</small></div><div><strong class="block text-2xl text-amber-600">{{ $reporteImportacion['omitidos'] }}</strong><small>Duplicados</small></div><div><strong class="block text-2xl text-red-600">{{ count($reporteImportacion['errores']) }}</strong><small>Errores</small></div></div>@if($reporteImportacion['errores'])<div class="mt-3 max-h-36 overflow-y-auto rounded-xl bg-red-50 p-3 text-xs text-red-700">@foreach($reporteImportacion['errores'] as $error)<p>• {{ $error }}</p>@endforeach</div>@endif</div>@endif<div class="flex justify-end gap-3"><flux:button type="button" wire:click="$set('modalImportar', false)" class="rounded-2xl border">Cerrar</flux:button><flux:button type="submit" class="rounded-2xl bg-emerald-600 px-6 text-white" wire:loading.attr="disabled"><span wire:loading.remove wire:target="importarExcel">Analizar e importar</span><span wire:loading wire:target="importarExcel">Importando...</span></flux:button></div></form></div></div>
+        <div class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm">
+            <div class="w-full max-w-3xl overflow-hidden rounded-[2rem] bg-white shadow-2xl dark:bg-zinc-950">
+                <header class="flex items-center justify-between bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-5 text-white">
+                    <div><p class="text-xs font-black uppercase tracking-widest text-white/70">Carga y actualización masiva</p><h3 class="text-xl font-black">Importar o actualizar desde Excel</h3></div>
+                    <button type="button" wire:click="$set('modalImportar', false)" class="rounded-xl bg-white/15 p-2"><flux:icon name="x-mark" class="h-5 w-5" /></button>
+                </header>
+                <form wire:submit="importarExcel" class="space-y-5 p-6">
+                    <div class="rounded-2xl border border-sky-100 bg-sky-50 p-4 text-sm text-sky-800 dark:border-sky-900 dark:bg-sky-950/20 dark:text-sky-200">
+                        Para crear registros deja la columna <strong>id</strong> vacía. Para actualizar, descarga un “Excel editable”, modifica sus valores y vuelve a cargarlo. La información del módulo Personas no se modifica.
+                    </div>
+                    <a href="{{ route('etiquetas.excel.plantilla') }}" x-on:click="iniciarExportacion()" class="flex items-center justify-between rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800 transition hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950/20">
+                        <span><strong class="block text-sm">Descargar plantilla oficial .xlsx</strong><small>Nombre(s), apellidos separados, datos académicos y estado.</small></span><flux:icon name="arrow-down-tray" class="h-6 w-6" />
+                    </a>
+                    <label class="block rounded-3xl border-2 border-dashed border-slate-300 p-8 text-center dark:border-zinc-700">
+                        <flux:icon name="document-arrow-up" class="mx-auto h-10 w-10 text-slate-400" />
+                        <span class="mt-3 block text-sm font-black">Selecciona la plantilla o el Excel editable</span>
+                        <flux:input type="file" wire:model="archivoExcel" accept=".xlsx,.xls" class="mt-4 w-full rounded-2xl" />
+                        @if($archivoExcel)<span class="mt-3 block text-xs font-bold text-emerald-700">Archivo listo: {{ $archivoExcel->getClientOriginalName() }}</span>@endif
+                    </label>
+                    @error('archivoExcel')<p class="rounded-xl bg-red-50 p-3 text-sm text-red-700">{{ $message }}</p>@enderror
+                    @if($reporteImportacion)
+                        <div class="rounded-2xl border border-slate-200 p-4 dark:border-zinc-800">
+                            <div class="grid grid-cols-2 gap-3 text-center md:grid-cols-4">
+                                <div><strong class="block text-2xl text-emerald-600">{{ $reporteImportacion['importados'] }}</strong><small>Nuevos</small></div>
+                                <div><strong class="block text-2xl text-sky-600">{{ $reporteImportacion['actualizados'] }}</strong><small>Actualizados</small></div>
+                                <div><strong class="block text-2xl text-amber-600">{{ $reporteImportacion['omitidos'] }}</strong><small>Duplicados</small></div>
+                                <div><strong class="block text-2xl text-red-600">{{ count($reporteImportacion['errores']) }}</strong><small>Errores</small></div>
+                            </div>
+                            @if($reporteImportacion['errores'])<div class="mt-3 max-h-36 overflow-y-auto rounded-xl bg-red-50 p-3 text-xs text-red-700">@foreach($reporteImportacion['errores'] as $error)<p>• {{ $error }}</p>@endforeach</div>@endif
+                        </div>
+                    @endif
+                    <div class="flex justify-end gap-3"><flux:button type="button" wire:click="$set('modalImportar', false)" class="rounded-2xl border">Cerrar</flux:button><flux:button type="submit" class="rounded-2xl bg-emerald-600 px-6 text-white" wire:loading.attr="disabled"><span wire:loading.remove wire:target="importarExcel">Analizar y procesar</span><span wire:loading wire:target="importarExcel">Procesando...</span></flux:button></div>
+                </form>
+            </div>
+        </div>
     @endif
 
     @if($modalImprimir)
@@ -208,6 +420,6 @@
     @endif
 
     @if($modalPapelera)
-        <div class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm"><div class="w-full max-w-4xl overflow-hidden rounded-[2rem] bg-white shadow-2xl dark:bg-zinc-950"><header class="flex items-center justify-between bg-slate-800 px-6 py-5 text-white"><div><p class="text-xs font-black uppercase tracking-widest text-white/60">Recuperación</p><h3 class="text-xl font-black">Papelera de alumnos</h3></div><button type="button" wire:click="$set('modalPapelera', false)" class="rounded-xl bg-white/10 p-2"><flux:icon name="x-mark" class="h-5 w-5" /></button></header><div class="max-h-[70vh] divide-y overflow-y-auto p-5">@forelse($papelera as $item)<div class="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"><div><p class="font-black">{{ $item->nombre }}</p><p class="text-xs text-slate-500">{{ $item->nivel }} · {{ $item->generacion }} · eliminado {{ $item->deleted_at?->diffForHumans() }}</p></div><div class="flex gap-2"><flux:button wire:click="restaurarAlumno({{ $item->id }})" size="sm" class="rounded-xl bg-emerald-600 text-white">Restaurar</flux:button>@if(auth()->user()?->puedeEtiquetas('administrar'))<button type="button" x-on:click="confirmarDefinitivo({{ $item->id }}, @js($item->nombre))" class="rounded-xl bg-red-600 px-3 py-2 text-xs font-black text-white">Eliminar definitivamente</button>@endif</div></div>@empty<div class="py-14 text-center text-slate-500">La papelera está vacía.</div>@endforelse</div></div></div>
+        <div class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm"><div class="w-full max-w-4xl overflow-hidden rounded-[2rem] bg-white shadow-2xl dark:bg-zinc-950"><header class="flex items-center justify-between bg-slate-800 px-6 py-5 text-white"><div><p class="text-xs font-black uppercase tracking-widest text-white/60">Recuperación</p><h3 class="text-xl font-black">Papelera de alumnos</h3></div><button type="button" wire:click="$set('modalPapelera', false)" class="rounded-xl bg-white/10 p-2"><flux:icon name="x-mark" class="h-5 w-5" /></button></header><div class="max-h-[70vh] divide-y overflow-y-auto p-5">@forelse($papelera as $item)<div class="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"><div><p class="font-black">{{ $item->nombre_completo }}</p><p class="text-xs text-slate-500">{{ $item->nivel }} · {{ $item->generacion }} · eliminado {{ $item->deleted_at?->diffForHumans() }}</p></div><div class="flex gap-2"><flux:button wire:click="restaurarAlumno({{ $item->id }})" size="sm" class="rounded-xl bg-emerald-600 text-white">Restaurar</flux:button>@if(auth()->user()?->puedeEtiquetas('administrar'))<button type="button" x-on:click="confirmarDefinitivo({{ $item->id }}, @js($item->nombre_completo))" class="rounded-xl bg-red-600 px-3 py-2 text-xs font-black text-white">Eliminar definitivamente</button>@endif</div></div>@empty<div class="py-14 text-center text-slate-500">La papelera está vacía.</div>@endforelse</div></div></div>
     @endif
 </div>

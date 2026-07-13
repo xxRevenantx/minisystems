@@ -98,9 +98,13 @@ class EtiquetaPdfController extends Controller
                 ->orderBy('generacion')
                 ->orderBy('grado')
                 ->orderBy('grupo')
-                ->orderBy('nombre');
+                ->orderBy('nombre')
+                ->orderBy('apellido_paterno')
+                ->orderBy('apellido_materno');
         } elseif ($data['orden'] === 'nombre') {
-            $query->orderBy('nombre');
+            $query->orderBy('nombre')
+                ->orderBy('apellido_paterno')
+                ->orderBy('apellido_materno');
         }
 
         $alumnos = $query->get();

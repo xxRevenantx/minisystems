@@ -44,6 +44,8 @@ return new class extends Migration
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('persona_id')->nullable()->constrained('personas')->nullOnDelete();
             $table->string('nombre');
+            $table->string('apellido_paterno')->nullable();
+            $table->string('apellido_materno')->nullable();
             $table->string('nivel', 100);
             $table->string('generacion', 100);
             $table->string('grado', 50)->nullable();
@@ -55,6 +57,7 @@ return new class extends Migration
             $table->index(['nivel', 'generacion']);
             $table->index(['grado', 'grupo']);
             $table->index(['activo', 'nombre']);
+            $table->index(['apellido_paterno', 'apellido_materno']);
         });
 
         if (Schema::hasTable('users')) {

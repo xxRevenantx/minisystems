@@ -60,6 +60,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('etiquetas', [EtiquetaController::class, 'index'])->name('etiquetas');
     Route::get('etiquetas/excel/plantilla', [EtiquetaExcelController::class, 'plantilla'])->name('etiquetas.excel.plantilla');
     Route::get('etiquetas/excel/exportar', [EtiquetaExcelController::class, 'exportar'])->name('etiquetas.excel.exportar');
+    Route::post('etiquetas/excel/exportar', [EtiquetaExcelController::class, 'exportar'])->name('etiquetas.excel.exportar.seleccionados');
     Route::post('etiquetas/pdf', [EtiquetaPdfController::class, 'generar'])->name('etiquetas.pdf');
 
     // RECONOCIMIENTO EDITAR

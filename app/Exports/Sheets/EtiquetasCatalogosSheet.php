@@ -24,11 +24,15 @@ class EtiquetasCatalogosSheet implements FromArray, WithEvents, WithStyles, With
     public function array(): array
     {
         $instrucciones = [
-            'Nombre, nivel y generación son obligatorios.',
+            'Nombre(s), nivel y generación son obligatorios; los apellidos pueden quedar vacíos.',
+            'Captura por separado nombre, apellido paterno y apellido materno. La etiqueta mostrará primero el nombre.',
+            'Para crear un registro nuevo deja la columna id vacía.',
+            'Para actualizar registros descarga un Excel editable y conserva el id de cada fila.',
             'Grado y grupo son opcionales.',
             'No cambies los encabezados de la hoja Alumnos.',
-            'Los duplicados se omiten usando nombre, nivel, generación, grado y grupo.',
+            'Los duplicados se omiten usando nombre, apellidos, nivel, generación, grado y grupo.',
             'El estado vacío se interpreta como activo.',
+            'La importación actualiza únicamente Etiquetas; no modifica el módulo Personas.',
             'Puedes agregar hasta 999 registros por archivo.',
         ];
 

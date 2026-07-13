@@ -5,8 +5,11 @@ namespace App\Http\Controllers;
 use App\Exports\EtiquetasAlumnosExport;
 use App\Exports\EtiquetasPlantillaExport;
 use App\Models\EtiquetaAlumno;
+use App\Models\HistorialExportacion;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Maatwebsite\Excel\Facades\Excel;
 
 class EtiquetaExcelController extends Controller
@@ -37,26 +40,84 @@ class EtiquetaExcelController extends Controller
     {
         abort_unless($request->user()?->puedeEtiquetas('descargar'), 403);
 
-        $query = EtiquetaAlumno::query();
-        $this->aplicarFiltros($query, $request);
+        $data = $request->validate([
+            'alcance' => ['nullable', Rule::in(['filtrados', 'todos', 'seleccionados', 'individual'])],
+            'tipo' => ['nullable', Rule::in(['reporte', 'edicion'])],
+            'id' => ['nullable', 'integer', 'exists:etiqueta_alumnos,id'],
+            'alumnos' => ['nullable'],
+        ]);
 
-        $query->orderBy('nivel')
+        $alcance = $data['alcance'] ?? 'filtrados';
+        $tipo = $data['tipo'] ?? 'reporte';
+        $editable = $tipo === 'edicion';
+
+        $query = EtiquetaAlumno::query()->with('persona:id,nombre');
+        $ids = collect();
+
+        if ($alcance === 'individual') {
+            abort_unless(filled($data['id'] ?? null), 422, 'No se indicó el registro a exportar.');
+            $query->whereKey((int) $data['id']);
+        } elseif ($alcance === 'seleccionados') {
+            $ids = $this->normalizarIds($request->input('alumnos'));
+            abort_if($ids->isEmpty(), 422, 'Selecciona al menos un alumno para exportar.');
+            $query->whereIn('id', $ids);
+        } elseif ($alcance === 'filtrados') {
+            $this->aplicarFiltros($query, $request);
+        }
+
+        $query
+            ->orderBy('nivel')
             ->orderBy('generacion')
             ->orderBy('grado')
             ->orderBy('grupo')
-            ->orderBy('nombre');
+            ->orderBy('nombre')
+            ->orderBy('apellido_paterno')
+            ->orderBy('apellido_materno');
+
+        $cantidad = (clone $query)->count();
+        abort_if($cantidad === 0, 422, 'No hay registros para exportar.');
+
+        HistorialExportacion::create([
+            'user_id' => $request->user()->id,
+            'tipo' => 'etiquetas',
+            'formato' => 'xlsx',
+            'cantidad' => $cantidad,
+            'configuracion' => [
+                'operacion' => 'exportacion_excel',
+                'alcance' => $alcance,
+                'tipo_excel' => $tipo,
+                'alumnos' => $ids->all(),
+                'filtros' => $alcance === 'filtrados' ? $request->only([
+                    'buscar', 'nivel', 'generacion', 'grado', 'grupo', 'estado',
+                ]) : [],
+            ],
+            'notas' => $editable
+                ? 'Excel editable para actualización masiva'
+                : 'Reporte de alumnos en Excel',
+        ]);
+
+        $sufijo = match ($alcance) {
+            'individual' => 'individual',
+            'seleccionados' => 'seleccionados',
+            'todos' => 'todos',
+            default => 'filtrados',
+        };
+
+        $nombre = Str::slug('etiquetas-'.$tipo.'-'.$sufijo).'-'.now()->format('Ymd-His').'.xlsx';
 
         return Excel::download(
-            new EtiquetasAlumnosExport($query),
-            'etiquetas-'.now()->format('Ymd-His').'.xlsx'
+            new EtiquetasAlumnosExport($query, $editable, self::NIVELES),
+            $nombre
         );
     }
 
     private function aplicarFiltros(Builder $query, Request $request): void
     {
-        if ($buscar = trim((string) $request->query('buscar'))) {
+        if ($buscar = trim((string) $request->input('buscar'))) {
             $query->where(function (Builder $subquery) use ($buscar): void {
                 $subquery->where('nombre', 'like', "%{$buscar}%")
+                    ->orWhere('apellido_paterno', 'like', "%{$buscar}%")
+                    ->orWhere('apellido_materno', 'like', "%{$buscar}%")
                     ->orWhere('nivel', 'like', "%{$buscar}%")
                     ->orWhere('generacion', 'like', "%{$buscar}%")
                     ->orWhere('grado', 'like', "%{$buscar}%")
@@ -65,19 +126,31 @@ class EtiquetaExcelController extends Controller
         }
 
         foreach (['nivel', 'generacion', 'grado', 'grupo'] as $campo) {
-            $valor = trim((string) $request->query($campo));
-
+            $valor = trim((string) $request->input($campo));
             if ($valor !== '') {
                 $query->where($campo, $valor);
             }
         }
 
-        $estado = (string) $request->query('estado', 'activos');
-
+        $estado = (string) $request->input('estado', 'activos');
         if ($estado === 'activos') {
             $query->where('activo', true);
         } elseif ($estado === 'inactivos') {
             $query->where('activo', false);
         }
+    }
+
+    private function normalizarIds(mixed $valor)
+    {
+        if (is_string($valor)) {
+            $decodificado = json_decode($valor, true);
+            $valor = is_array($decodificado) ? $decodificado : explode(',', $valor);
+        }
+
+        return collect(is_array($valor) ? $valor : [])
+            ->filter(fn ($id) => is_numeric($id))
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
     }
 }

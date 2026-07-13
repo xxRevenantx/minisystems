@@ -118,7 +118,7 @@
 
             @foreach ($pagina as $indice => $alumno)
                 @php
-                    $nombreOriginal = trim((string) $alumno->nombre);
+                    $nombreOriginal = trim((string) $alumno->nombre_completo);
 
                     $nombre = $configuracion['mayusculas'] ? mb_strtoupper($nombreOriginal, 'UTF-8') : $nombreOriginal;
 
@@ -151,48 +151,22 @@
 
                 <div class="bloque {{ $esPrimerAlumno ? 'superior' : 'inferior' }}">
                     <div class="contenido {{ $debeRotarBloque ? 'rotado-180' : '' }}">
-                        @if ($debeRotarBloque)
-                            {{--
-                                IMPORTANTE:
-                                Como todo el bloque se rota 180°,
-                                para que VISUALMENTE los datos queden arriba,
-                                en el HTML primero va el nombre y después los datos.
-                            --}}
-                            <div class="nombre" style="font-size: {{ $tamanoNombre }}px;">
-                                {{ $nombre }}
-                            </div>
+                        <div class="nombre" style="font-size: {{ $tamanoNombre }}px;">
+                            {{ $nombre }}
+                        </div>
 
-                            <div class="datos abajo-del-nombre">
+                        <div class="datos abajo-del-nombre">
+                            @if (filled($detalle))
+                                {{ $detalle }}
+                            @endif
+
+                            @if ($configuracion['mostrar_generacion'] && filled($alumno->generacion))
                                 @if (filled($detalle))
-                                    {{ $detalle }}
+                                    <br>
                                 @endif
-
-                                @if ($configuracion['mostrar_generacion'] && filled($alumno->generacion))
-                                    @if (filled($detalle))
-                                        <br>
-                                    @endif
-                                    GENERACIÓN: {{ mb_strtoupper($alumno->generacion, 'UTF-8') }}
-                                @endif
-                            </div>
-                        @else
-                            {{-- Modo normal --}}
-                            <div class="nombre" style="font-size: {{ $tamanoNombre }}px;">
-                                {{ $nombre }}
-                            </div>
-
-                            <div class="datos abajo-del-nombre">
-                                @if (filled($detalle))
-                                    {{ $detalle }}
-                                @endif
-
-                                @if ($configuracion['mostrar_generacion'] && filled($alumno->generacion))
-                                    @if (filled($detalle))
-                                        <br>
-                                    @endif
-                                    GENERACIÓN: {{ mb_strtoupper($alumno->generacion, 'UTF-8') }}
-                                @endif
-                            </div>
-                        @endif
+                                GENERACIÓN: {{ mb_strtoupper($alumno->generacion, 'UTF-8') }}
+                            @endif
+                        </div>
                     </div>
                 </div>
             @endforeach

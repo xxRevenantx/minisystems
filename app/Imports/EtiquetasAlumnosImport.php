@@ -8,9 +8,7 @@ class EtiquetasAlumnosImport implements WithMultipleSheets
 {
     private readonly EtiquetasAlumnosSheetImport $alumnosSheet;
 
-    /**
-     * @param  array<int, string>  $niveles
-     */
+    /** @param array<int, string> $niveles */
     public function __construct(int $userId, array $niveles)
     {
         $this->alumnosSheet = new EtiquetasAlumnosSheetImport($userId, $niveles);
@@ -23,9 +21,7 @@ class EtiquetasAlumnosImport implements WithMultipleSheets
         ];
     }
 
-    /**
-     * @return array{importados:int,omitidos:int,errores:array<int,string>}
-     */
+    /** @return array{importados:int,actualizados:int,omitidos:int,errores:array<int,string>} */
     public function reporte(): array
     {
         return $this->alumnosSheet->reporte();
