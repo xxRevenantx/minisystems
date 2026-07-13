@@ -31,27 +31,33 @@
         <flux:navlist variant="outline">
             <flux:navlist.group :heading="__('Studio creativo')" expandable>
                 <flux:navlist.item icon="briefcase" :href="route('studio.section', 'marcas')"
-                    :current="request()->routeIs('studio.section') && request()->route('section') === 'marcas'" wire:navigate>
+                    :current="request()->routeIs('studio.section') && request()->route('section') === 'marcas'"
+                    wire:navigate>
                     {{ __('Clientes y marcas') }}
                 </flux:navlist.item>
                 <flux:navlist.item icon="users" :href="route('studio.section', 'personas')"
-                    :current="request()->routeIs('studio.section') && request()->route('section') === 'personas'" wire:navigate>
+                    :current="request()->routeIs('studio.section') && request()->route('section') === 'personas'"
+                    wire:navigate>
                     {{ __('Personas y contactos') }}
                 </flux:navlist.item>
                 <flux:navlist.item icon="folder" :href="route('studio.section', 'proyectos')"
-                    :current="request()->routeIs('studio.section') && request()->route('section') === 'proyectos'" wire:navigate>
+                    :current="request()->routeIs('studio.section') && request()->route('section') === 'proyectos'"
+                    wire:navigate>
                     {{ __('Proyectos y campañas') }}
                 </flux:navlist.item>
                 <flux:navlist.item icon="photo" :href="route('studio.section', 'biblioteca')"
-                    :current="request()->routeIs('studio.section') && request()->route('section') === 'biblioteca'" wire:navigate>
+                    :current="request()->routeIs('studio.section') && request()->route('section') === 'biblioteca'"
+                    wire:navigate>
                     {{ __('Biblioteca multimedia') }}
                 </flux:navlist.item>
                 <flux:navlist.item icon="squares-2x2" :href="route('studio.section', 'plantillas')"
-                    :current="request()->routeIs('studio.section') && request()->route('section') === 'plantillas'" wire:navigate>
+                    :current="request()->routeIs('studio.section') && request()->route('section') === 'plantillas'"
+                    wire:navigate>
                     {{ __('Plantillas dinámicas') }}
                 </flux:navlist.item>
                 <flux:navlist.item icon="document-duplicate" :href="route('studio.section', 'generador')"
-                    :current="request()->routeIs('studio.section') && request()->route('section') === 'generador'" wire:navigate>
+                    :current="request()->routeIs('studio.section') && request()->route('section') === 'generador'"
+                    wire:navigate>
                     {{ __('Generador masivo') }}
                 </flux:navlist.item>
             </flux:navlist.group>
@@ -60,27 +66,33 @@
         <flux:navlist variant="outline">
             <flux:navlist.group :heading="__('Producción y seguimiento')" expandable>
                 <flux:navlist.item icon="clipboard-document-list" :href="route('studio.section', 'solicitudes')"
-                    :current="request()->routeIs('studio.section') && request()->route('section') === 'solicitudes'" wire:navigate>
+                    :current="request()->routeIs('studio.section') && request()->route('section') === 'solicitudes'"
+                    wire:navigate>
                     {{ __('Solicitudes') }}
                 </flux:navlist.item>
                 <flux:navlist.item icon="calendar-days" :href="route('studio.section', 'publicaciones')"
-                    :current="request()->routeIs('studio.section') && request()->route('section') === 'publicaciones'" wire:navigate>
+                    :current="request()->routeIs('studio.section') && request()->route('section') === 'publicaciones'"
+                    wire:navigate>
                     {{ __('Publicaciones') }}
                 </flux:navlist.item>
                 <flux:navlist.item icon="rectangle-group" :href="route('studio.section', 'presets')"
-                    :current="request()->routeIs('studio.section') && request()->route('section') === 'presets'" wire:navigate>
+                    :current="request()->routeIs('studio.section') && request()->route('section') === 'presets'"
+                    wire:navigate>
                     {{ __('Formatos de redes') }}
                 </flux:navlist.item>
                 <flux:navlist.item icon="arrow-down-tray" :href="route('studio.section', 'exportaciones')"
-                    :current="request()->routeIs('studio.section') && request()->route('section') === 'exportaciones'" wire:navigate>
+                    :current="request()->routeIs('studio.section') && request()->route('section') === 'exportaciones'"
+                    wire:navigate>
                     {{ __('Exportaciones') }}
                 </flux:navlist.item>
                 <flux:navlist.item icon="qr-code" :href="route('studio.section', 'validaciones')"
-                    :current="request()->routeIs('studio.section') && request()->route('section') === 'validaciones'" wire:navigate>
+                    :current="request()->routeIs('studio.section') && request()->route('section') === 'validaciones'"
+                    wire:navigate>
                     {{ __('Validación pública') }}
                 </flux:navlist.item>
                 <flux:navlist.item icon="clock" :href="route('studio.section', 'actividad')"
-                    :current="request()->routeIs('studio.section') && request()->route('section') === 'actividad'" wire:navigate>
+                    :current="request()->routeIs('studio.section') && request()->route('section') === 'actividad'"
+                    wire:navigate>
                     {{ __('Actividad') }}
                 </flux:navlist.item>
             </flux:navlist.group>
@@ -91,8 +103,9 @@
 
                 <flux:navlist.group :heading="__('Procesamiento de imágenes')" expandable>
 
-                    <flux:navlist.item icon="rectangle-stack" :href="route('marcos')" :current="request()->routeIs('marcos')"
-                        wire:navigate>{{ __('Marcos adaptables') }}</flux:navlist.item>
+                    <flux:navlist.item icon="rectangle-stack" :href="route('marcos')"
+                        :current="request()->routeIs('marcos')" wire:navigate>{{ __('Marcos adaptables') }}
+                    </flux:navlist.item>
 
                     <flux:navlist.item icon="photo" :href="route('images')" :current="request()->routeIs('images')"
                         wire:navigate>{{ __('System Images') }}</flux:navlist.item>
@@ -136,7 +149,7 @@
                         :current="request()->routeIs('credencial')" wire:navigate>{{ __('Credenciales') }}
                     </flux:navlist.item>
 
-                    @if(auth()->user()?->puedeEtiquetas('ver'))
+                    @if (auth()->user()?->puedeEtiquetas('ver'))
                         <flux:navlist.item icon="tag" :href="route('etiquetas')"
                             :current="request()->routeIs('etiquetas*')" wire:navigate>{{ __('Etiquetas') }}
                         </flux:navlist.item>

@@ -329,6 +329,13 @@ window.miniSystemsTinyMce = ({
 
 /** Confirmaciones de acciones sensibles del módulo Etiquetas. */
 window.etiquetasModule = () => ({
+    exportandoExcel: false,
+    iniciarExportacion() {
+        this.exportandoExcel = true;
+        window.setTimeout(() => {
+            this.exportandoExcel = false;
+        }, 3500);
+    },
     confirmarEliminarAlumno(id, nombre) {
         this.confirmar({
             title: '¿Enviar a la papelera?',

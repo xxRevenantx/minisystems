@@ -65,7 +65,7 @@ return [
 
     'temporary_file_upload' => [
         'disk' => null,
-        'rules' => 'file|mimes:jpg,jpeg,png,webp|max:20480',
+        'rules' => 'file|max:20480',
         'directory' => null,
         'middleware' => null,
         'preview_mimes' => [

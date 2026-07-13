@@ -8,13 +8,14 @@ use App\Models\HistorialExportacion;
 use App\Models\EtiquetaPermiso;
 use App\Models\User;
 use App\Models\Persona;
-use App\Services\EtiquetaXlsxService;
+use App\Imports\EtiquetasAlumnosImport;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\File;
+use Maatwebsite\Excel\Facades\Excel;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
@@ -425,51 +426,48 @@ class GestionEtiquetas extends Component
         $this->dispatch('swal', icon: 'success', title: 'Permiso actualizado');
     }
 
-    public function importarExcel(EtiquetaXlsxService $xlsx): void
+    public function importarExcel(): void
     {
         abort_unless(auth()->user()?->puedeEtiquetas('importar'), 403);
-        $this->validate(['archivoExcel' => ['required', 'file', 'mimes:xlsx', 'max:10240']]);
-        try {
-            $filas = $xlsx->leer($this->archivoExcel->getRealPath());
-            if (count($filas) < 2) throw new \RuntimeException('El archivo no contiene datos para importar.');
-            $headers = array_map(fn ($v) => Str::lower(Str::ascii(trim((string) $v))), $filas[0]);
-            foreach (EtiquetaXlsxService::HEADERS as $i => $header) {
-                if (($headers[$i] ?? null) !== $header) throw new \RuntimeException('La primera hoja no conserva los encabezados de la plantilla oficial.');
-            }
 
-            $importados = 0; $omitidos = 0; $errores = [];
-            DB::transaction(function () use ($filas, &$importados, &$omitidos, &$errores) {
-                foreach (array_slice($filas, 1) as $offset => $row) {
-                    $numero = $offset + 2;
-                    $row = array_pad($row, 6, '');
-                    [$nombre, $nivel, $generacion, $grado, $grupo, $estado] = array_map(fn ($v) => trim((string) $v), array_slice($row, 0, 6));
-                    if ($nombre === '' && $nivel === '' && $generacion === '') continue;
-                    if ($nombre === '' || $nivel === '' || $generacion === '') { $errores[] = "Fila {$numero}: nombre, nivel y generación son obligatorios."; continue; }
-                    $nivelValido = collect($this->niveles)->first(fn ($item) => Str::lower(Str::ascii($item)) === Str::lower(Str::ascii($nivel)));
-                    if (! $nivelValido) { $errores[] = "Fila {$numero}: el nivel «{$nivel}» no es válido."; continue; }
-                    $payload = [
-                        'nombre' => $this->normalizarNombre($nombre), 'nivel' => $nivelValido,
-                        'generacion' => Str::squish($generacion), 'grado' => $grado !== '' ? Str::squish($grado) : null,
-                        'grupo' => $grupo !== '' ? Str::upper(Str::squish($grupo)) : null,
-                    ];
-                    $duplicado = EtiquetaAlumno::query()->where('nombre', $payload['nombre'])->where('nivel', $payload['nivel'])
-                        ->where('generacion', $payload['generacion'])
-                        ->where(fn (Builder $q) => $payload['grado'] === null ? $q->whereNull('grado') : $q->where('grado', $payload['grado']))
-                        ->where(fn (Builder $q) => $payload['grupo'] === null ? $q->whereNull('grupo') : $q->where('grupo', $payload['grupo']))->exists();
-                    if ($duplicado) { $omitidos++; continue; }
-                    EtiquetaAlumno::create($payload + [
-                        'user_id' => auth()->id(),
-                        'activo' => ! in_array(Str::lower($estado), ['inactivo','0','no'], true),
-                    ]);
-                    $importados++;
-                }
-            });
-            $this->reporteImportacion = compact('importados', 'omitidos', 'errores');
-            $this->archivoExcel = null;
+        $this->validate(
+            [
+                'archivoExcel' => [
+                    'required',
+                    'file',
+                    'mimes:xlsx,xls',
+                    'max:10240',
+                ],
+            ],
+            [
+                'archivoExcel.required' => 'Selecciona la plantilla de Excel completada.',
+                'archivoExcel.file' => 'El archivo seleccionado no es válido.',
+                'archivoExcel.mimes' => 'El archivo debe estar en formato Excel .xlsx o .xls.',
+                'archivoExcel.max' => 'El archivo de Excel no debe superar los 10 MB.',
+            ],
+        );
+
+        try {
+            $importacion = new EtiquetasAlumnosImport((int) auth()->id(), $this->niveles);
+            Excel::import($importacion, $this->archivoExcel);
+
+            $this->reporteImportacion = $importacion->reporte();
+            $this->reset('archivoExcel');
             $this->resetPage();
-            $this->dispatch('swal', icon: $errores ? 'warning' : 'success', title: "{$importados} alumnos importados", text: $omitidos." duplicados omitidos · ".count($errores).' filas con error');
-        } catch (\Throwable $e) {
-            $this->addError('archivoExcel', $e->getMessage());
+
+            $importados = $this->reporteImportacion['importados'];
+            $omitidos = $this->reporteImportacion['omitidos'];
+            $errores = $this->reporteImportacion['errores'];
+
+            $this->dispatch(
+                'swal',
+                icon: $errores ? 'warning' : 'success',
+                title: "{$importados} alumnos importados",
+                text: $omitidos.' duplicados omitidos · '.count($errores).' filas con error',
+            );
+        } catch (\Throwable $exception) {
+            report($exception);
+            $this->addError('archivoExcel', $exception->getMessage());
         }
     }
 
