@@ -4,12 +4,18 @@ namespace App\Livewire\Reconocimientos;
 
 use App\Models\Credencial;
 use App\Models\Directivo;
+use App\Models\Marca;
+use App\Models\Persona;
+use App\Models\ProyectoCreativo;
 use App\Models\Reconocimiento;
 use App\Models\ReconocimientoEvento;
 use App\Models\ReconocimientoImagen;
 use App\Models\ReconocimientoTipo;
+use App\Models\RegistroValidacion;
 use App\Support\ReconocimientoHtml;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -27,6 +33,10 @@ class CreacionReconocimientos extends Component
     public ?string $fecha = null;
     public array $directivos = [];
     public string $estado = 'borrador';
+    public ?int $marca_id = null;
+    public ?int $proyecto_creativo_id = null;
+    public ?int $persona_id = null;
+    public bool $generarValidacion = true;
 
     public string $buscarAlumno = '';
     public string $nivelFiltro = '';
@@ -54,6 +64,10 @@ class CreacionReconocimientos extends Component
             'directivos' => 'required|array|min:1|max:5',
             'directivos.*' => 'integer|exists:directivos,id',
             'estado' => 'required|in:borrador,revision',
+            'marca_id' => 'nullable|integer|exists:marcas,id',
+            'proyecto_creativo_id' => 'nullable|integer|exists:proyectos_creativos,id',
+            'persona_id' => 'nullable|integer|exists:personas,id',
+            'generarValidacion' => 'boolean',
         ];
 
         if ($this->modo === 'masivo') {
@@ -74,6 +88,42 @@ class CreacionReconocimientos extends Component
         'directivos.max' => 'Selecciona como máximo cinco firmantes.',
         'credencialesSeleccionadas.required' => 'Selecciona al menos un alumno.',
     ];
+
+    public function updatedMarcaId($value): void
+    {
+        if ($this->proyecto_creativo_id && ! ProyectoCreativo::query()
+            ->whereKey($this->proyecto_creativo_id)
+            ->when($value, fn ($query) => $query->where('marca_id', $value))
+            ->exists()) {
+            $this->proyecto_creativo_id = null;
+        }
+
+        if ($this->persona_id && ! Persona::query()
+            ->whereKey($this->persona_id)
+            ->when($value, fn ($query) => $query->where('marca_id', $value))
+            ->exists()) {
+            $this->persona_id = null;
+        }
+    }
+
+    public function updatedPersonaId($value): void
+    {
+        if ($this->modo !== 'individual' || ! $value || ! ($persona = Persona::find($value))) {
+            return;
+        }
+
+        $this->reconocimiento = $persona->nombre;
+        $this->marca_id ??= $persona->marca_id;
+    }
+
+    public function updatedProyectoCreativoId($value): void
+    {
+        if (! $value || ! ($proyecto = ProyectoCreativo::find($value))) {
+            return;
+        }
+
+        $this->marca_id ??= $proyecto->marca_id;
+    }
 
     public function updatedReconocimientoTipoId($value): void
     {
@@ -144,6 +194,15 @@ class CreacionReconocimientos extends Component
         ]);
     }
 
+    private function nuevoCodigoValidacion(): string
+    {
+        do {
+            $codigo = strtoupper(Str::random(4).'-'.Str::random(4).'-'.Str::random(4));
+        } while (RegistroValidacion::where('codigo', $codigo)->exists());
+
+        return $codigo;
+    }
+
     public function guardarReconocimiento(): void
     {
         $this->validate();
@@ -154,13 +213,38 @@ class CreacionReconocimientos extends Component
 
         DB::transaction(function () use ($destinatarios, $descripcion) {
             foreach ($destinatarios as $credencial) {
+                $nombreDestinatario = trim($credencial?->nombre ?? $this->reconocimiento);
+                $personaId = $credencial?->persona_id ?: ($credencial ? null : $this->persona_id);
+                $validation = null;
+
+                if ($this->generarValidacion && Schema::hasTable('registros_validacion')) {
+                    $validation = RegistroValidacion::create([
+                        'user_id' => auth()->id(),
+                        'persona_id' => $personaId,
+                        'proyecto_creativo_id' => $this->proyecto_creativo_id,
+                        'codigo' => $this->nuevoCodigoValidacion(),
+                        'tipo' => 'reconocimiento',
+                        'titulo' => 'Reconocimiento de '.$nombreDestinatario,
+                        'estado' => 'valido',
+                        'emitido_at' => $this->fecha,
+                        'datos_publicos' => [
+                            'descripcion' => trim(strip_tags($descripcion)),
+                            'destinatario' => $nombreDestinatario,
+                        ],
+                    ]);
+                }
+
                 $rec = Reconocimiento::create([
+                    'marca_id' => $this->marca_id,
+                    'proyecto_creativo_id' => $this->proyecto_creativo_id,
+                    'persona_id' => $personaId,
+                    'registro_validacion_id' => $validation?->id,
                     'reconocimiento_evento_id' => $this->reconocimiento_evento_id,
                     'reconocimiento_tipo_id' => $this->reconocimiento_tipo_id,
                     'credencial_id' => $credencial?->id,
-                    'destinatario_tipo' => $credencial ? 'alumno' : 'externo',
+                    'destinatario_tipo' => $credencial ? 'credencial' : ($this->persona_id ? 'persona' : 'externo'),
                     'reconocimiento_imagen_id' => $this->reconocimiento_imagen_id,
-                    'reconocimiento_a' => trim($credencial?->nombre ?? $this->reconocimiento),
+                    'reconocimiento_a' => $nombreDestinatario,
                     'descripcion' => $descripcion,
                     'lugar_obtenido' => $this->lugar_obtenido ? trim($this->lugar_obtenido) : null,
                     'fecha' => $this->fecha,
@@ -189,10 +273,15 @@ class CreacionReconocimientos extends Component
             'lugar_obtenido',
             'directivos',
             'estado',
+            'marca_id',
+            'proyecto_creativo_id',
+            'persona_id',
+            'generarValidacion',
             'credencialesSeleccionadas',
             'archivoCsv',
         ]);
         $this->estado = 'borrador';
+        $this->generarValidacion = true;
         $this->fecha = now()->toDateString();
         $this->dispatch('reconocimiento-descripcion-actualizada', html: '');
         $this->resetValidation();
@@ -208,6 +297,16 @@ class CreacionReconocimientos extends Component
             ->when($this->licenciaturaFiltro, fn($q) => $q->where('licenciatura', $this->licenciaturaFiltro))
             ->orderBy('nombre')->limit(100)->get();
 
+        $marcas = Schema::hasTable('marcas')
+            ? Marca::query()->where('activo', true)->orderBy('nombre')->get()
+            : collect();
+        $proyectosCreativos = Schema::hasTable('proyectos_creativos')
+            ? ProyectoCreativo::query()->when($this->marca_id, fn ($query) => $query->where('marca_id', $this->marca_id))->orderByDesc('created_at')->get()
+            : collect();
+        $personas = Schema::hasTable('personas')
+            ? Persona::query()->where('activo', true)->when($this->marca_id, fn ($query) => $query->where('marca_id', $this->marca_id))->orderBy('nombre')->limit(300)->get()
+            : collect();
+
         return view('livewire.reconocimientos.creacion-reconocimientos', [
             'reconocimientosImagenes' => ReconocimientoImagen::where('activo', true)->latest()->get(),
             'directivosLista' => Directivo::where('activo', true)->orderBy('orden')->orderBy('id')->get(),
@@ -218,6 +317,9 @@ class CreacionReconocimientos extends Component
             'grados' => Credencial::whereNotNull('grado')->distinct()->orderBy('grado')->pluck('grado'),
             'grupos' => Credencial::whereNotNull('grupo')->distinct()->orderBy('grupo')->pluck('grupo'),
             'licenciaturas' => Credencial::whereNotNull('licenciatura')->distinct()->orderBy('licenciatura')->pluck('licenciatura'),
+            'marcas' => $marcas,
+            'proyectosCreativos' => $proyectosCreativos,
+            'personas' => $personas,
         ]);
     }
 }

@@ -3,6 +3,10 @@
 namespace App\Livewire\Images;
 
 use App\Models\Marco;
+use App\Models\PresetSocial;
+use App\Models\HistorialExportacion;
+use App\Services\CreativeActivity;
+use Illuminate\Support\Facades\Schema;
 use App\Services\ImagePipeline;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -32,6 +36,8 @@ class CreacionImagenes extends Component
     public string $renamePattern = '{orig}_{index}';
     public bool $organizeFolders = true;
 
+    public ?int $presetSocialId = null;
+
     public int $desktopWidth = 2058;
     public int $desktopHeight = 1365;
     public int $mobileWidth = 1365;
@@ -56,6 +62,7 @@ class CreacionImagenes extends Component
             'quality' => ['required', 'integer', 'between:60,100'],
             'renamePattern' => ['required', 'string', 'max:120'],
             'organizeFolders' => ['boolean'],
+            'presetSocialId' => ['nullable', 'exists:presets_sociales,id'],
             'desktopWidth' => ['required', 'integer', 'between:320,6000'],
             'desktopHeight' => ['required', 'integer', 'between:320,6000'],
             'mobileWidth' => ['required', 'integer', 'between:320,6000'],
@@ -82,6 +89,29 @@ class CreacionImagenes extends Component
     public function updatedMarco(): void
     {
         $this->resetValidation('marco');
+    }
+
+    public function updatedPresetSocialId($value): void
+    {
+        if (! $value || ! ($preset = PresetSocial::find($value))) {
+            return;
+        }
+
+        if ($preset->orientacion === 'vertical') {
+            $this->mobileWidth = $preset->ancho;
+            $this->mobileHeight = $preset->alto;
+            $this->orientationMode = 'mobile';
+        } elseif ($preset->orientacion === 'horizontal') {
+            $this->desktopWidth = $preset->ancho;
+            $this->desktopHeight = $preset->alto;
+            $this->orientationMode = 'desktop';
+        } else {
+            $this->desktopWidth = $preset->ancho;
+            $this->desktopHeight = $preset->alto;
+            $this->mobileWidth = $preset->ancho;
+            $this->mobileHeight = $preset->alto;
+            $this->squareMode = 'desktop';
+        }
     }
 
     public function updatedImageSettings($value, string $path): void
@@ -273,6 +303,7 @@ class CreacionImagenes extends Component
             'format' => ['required', 'in:jpg,png,webp,original'],
             'quality' => ['required', 'integer', 'between:60,100'],
             'renamePattern' => ['required', 'string', 'max:120'],
+            'presetSocialId' => ['nullable', 'exists:presets_sociales,id'],
             'desktopWidth' => ['required', 'integer', 'between:320,6000'],
             'desktopHeight' => ['required', 'integer', 'between:320,6000'],
             'mobileWidth' => ['required', 'integer', 'between:320,6000'],
@@ -476,6 +507,28 @@ class CreacionImagenes extends Component
 
         $zipFilename = 'imagenes_procesadas_'.now()->format('Ymd_His').'.zip';
 
+        try {
+            if (Schema::hasTable('historial_exportaciones')) {
+                $record = HistorialExportacion::create([
+                    'user_id' => auth()->id(),
+                    'tipo' => 'system_images',
+                    'formato' => 'zip/'.$this->format,
+                    'cantidad' => $added,
+                    'configuracion' => [
+                        'preset_social_id' => $this->presetSocialId,
+                        'orientation_mode' => $this->orientationMode,
+                        'desktop' => $this->desktopWidth.'x'.$this->desktopHeight,
+                        'mobile' => $this->mobileWidth.'x'.$this->mobileHeight,
+                        'fit' => $this->fitMode,
+                        'quality' => $this->quality,
+                    ],
+                ]);
+                CreativeActivity::log('exportaciones', 'procesar_imagenes', $record, $added.' imágenes procesadas');
+            }
+        } catch (\Throwable) {
+            // La descarga continúa aunque el historial aún no esté migrado.
+        }
+
         return response()->download($tmpZipPath, $zipFilename)->deleteFileAfterSend(true);
     }
 
@@ -637,6 +690,9 @@ class CreacionImagenes extends Component
     {
         return view('livewire.images.creacion-imagenes', [
             'marcos' => Marco::query()->where('activo', true)->orderBy('orden')->orderBy('nombre')->get(),
+            'presetsSociales' => Schema::hasTable('presets_sociales')
+                ? PresetSocial::query()->where('activo', true)->orderBy('red_social')->orderBy('nombre')->get()
+                : collect(),
         ]);
     }
 }

@@ -104,8 +104,8 @@
                 @foreach($reconocimientosImagenes as $p)
                     <label
                         class="relative cursor-pointer overflow-hidden rounded-xl border-2 transition {{ (int)$reconocimiento_imagen_id === $p->id ? 'border-[#88AC2E] ring-2 ring-[#88AC2E]/20' : 'border-neutral-200 dark:border-neutral-700' }}">
-                        <input type="radio" wire:model="reconocimiento_imagen_id" value="{{ $p->id }}"
-                            class="absolute left-3 top-3 z-10 h-4 w-4 accent-[#88AC2E]">
+                        <flux:radio wire:model="reconocimiento_imagen_id" value="{{ $p->id }}"
+                            class="absolute left-3 top-3 z-10 h-4 w-4 accent-[#88AC2E]" />
                         <img src="{{ asset('storage/imagenesReconocimientos/'.$p->imagen) }}"
                             class="h-28 w-full object-cover" alt="Plantilla">
                         <div class="p-2 text-xs font-bold">{{ $p->nombre ?: $p->descripcion }}</div>

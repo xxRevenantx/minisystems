@@ -1,13 +1,13 @@
 <div class="space-y-5">
     <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
         @foreach(['total'=>'Total','borrador'=>'Borradores','revision'=>'En revisión','aprobado'=>'Aprobados','generado'=>'Generados','entregado'=>'Entregados','cancelado'=>'Cancelados'] as $key=>$label)
-            <button type="button" wire:click="$set('estadoFiltro','{{ $key === 'total' ? '' : $key }}')"
+            <flux:button type="button" wire:click="$set('estadoFiltro','{{ $key === 'total' ? '' : $key }}')"
                 class="rounded-xl border border-neutral-200 bg-white p-3 text-left transition hover:-translate-y-0.5 hover:border-[#006492] dark:border-neutral-700 dark:bg-neutral-900">
                 <span class="block text-2xl font-black {{ $key === 'cancelado' ? 'text-red-600' : ($key === 'entregado' ? 'text-[#88AC2E]' : 'text-[#006492]') }}">
                     {{ $stats[$key] }}
                 </span>
                 <span class="text-xs font-semibold text-neutral-500">{{ $label }}</span>
-            </button>
+            </flux:button>
         @endforeach
     </div>
 

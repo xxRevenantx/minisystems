@@ -10,7 +10,7 @@
                 </div>
 
                 <div class="inline-flex rounded-xl border border-neutral-200 bg-white p-1 dark:border-neutral-700 dark:bg-neutral-800">
-                    <flux:button type="button" size="sm" wire:click="$set('modo','individual')"
+                    <flux:button variant="primary" type="button" size="sm" wire:click="$set('modo','individual')"
                         class="{{ $modo === 'individual' ? '!bg-[#006492] !text-white' : '' }}">
                         Individual
                     </flux:button>
@@ -42,6 +42,43 @@
                         <flux:select.option value="revision">Pendiente de revisión</flux:select.option>
                     </flux:select>
                 </div>
+
+                @if($marcas->isNotEmpty() || $proyectosCreativos->isNotEmpty() || $personas->isNotEmpty())
+                    <section class="rounded-2xl border border-violet-200 bg-violet-50/60 p-4 dark:border-violet-900/60 dark:bg-violet-950/20">
+                        <div class="mb-3">
+                            <flux:heading size="sm" class="!text-violet-800 dark:!text-violet-200">Organización creativa</flux:heading>
+                            <flux:text class="mt-1 text-xs">Relaciona el reconocimiento con una marca, campaña o persona del catálogo general.</flux:text>
+                        </div>
+                        <div class="grid gap-4 md:grid-cols-3">
+                            <flux:select wire:model.live="marca_id" label="Marca o cliente">
+                                <flux:select.option value="">Sin marca</flux:select.option>
+                                @foreach($marcas as $marcaItem)
+                                    <flux:select.option value="{{ $marcaItem->id }}">{{ $marcaItem->nombre }}</flux:select.option>
+                                @endforeach
+                            </flux:select>
+
+                            <flux:select wire:model.live="proyecto_creativo_id" label="Evento o campaña creativa">
+                                <flux:select.option value="">Sin proyecto</flux:select.option>
+                                @foreach($proyectosCreativos as $proyectoItem)
+                                    <flux:select.option value="{{ $proyectoItem->id }}">{{ $proyectoItem->nombre }}</flux:select.option>
+                                @endforeach
+                            </flux:select>
+
+                            @if($modo === 'individual')
+                                <flux:select wire:model.live="persona_id" label="Persona del catálogo">
+                                    <flux:select.option value="">Captura manual</flux:select.option>
+                                    @foreach($personas as $personaItem)
+                                        <flux:select.option value="{{ $personaItem->id }}">{{ $personaItem->nombre }}{{ $personaItem->cargo ? ' · '.$personaItem->cargo : '' }}</flux:select.option>
+                                    @endforeach
+                                </flux:select>
+                            @else
+                                <div class="rounded-xl border border-violet-200 bg-white/70 p-3 text-xs text-violet-800 dark:border-violet-900 dark:bg-neutral-900/60 dark:text-violet-200">
+                                    En modo masivo, cada registro conserva la persona asociada a su credencial cuando exista.
+                                </div>
+                            @endif
+                        </div>
+                    </section>
+                @endif
 
                 @if($modo === 'individual')
                     <div class="grid gap-4 md:grid-cols-2">
@@ -173,6 +210,11 @@
                     <flux:input wire:model.live="fecha" type="date" label="Fecha" badge="Obligatorio" />
                 </div>
 
+                <label class="flex cursor-pointer items-center justify-between gap-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900 dark:bg-emerald-950/20">
+                    <span><strong class="block text-sm text-emerald-900 dark:text-emerald-200">Validación pública</strong><small class="text-xs text-neutral-500">Genera un código único y una página pública para comprobar la autenticidad.</small></span>
+                    <flux:checkbox wire:model="generarValidacion" class="h-5 w-5 rounded border-emerald-300 text-emerald-600" />
+                </label>
+
                 <section>
                     <div class="mb-3 flex items-center justify-between">
                         <flux:heading size="sm">Firmantes</flux:heading>
@@ -210,8 +252,8 @@
                         @forelse($reconocimientosImagenes as $plantilla)
                             <label
                                 class="relative cursor-pointer overflow-hidden rounded-xl border-2 transition {{ (int)$reconocimiento_imagen_id === $plantilla->id ? 'border-[#88AC2E] ring-2 ring-[#88AC2E]/20' : 'border-neutral-200 dark:border-neutral-700' }}">
-                                <input type="radio" wire:model.live="reconocimiento_imagen_id" value="{{ $plantilla->id }}"
-                                    class="absolute left-3 top-3 z-10 h-4 w-4 accent-[#88AC2E]">
+                                <flux:radio wire:model.live="reconocimiento_imagen_id" value="{{ $plantilla->id }}"
+                                    class="absolute left-3 top-3 z-10 h-4 w-4 accent-[#88AC2E]" />
                                 <img src="{{ asset('storage/imagenesReconocimientos/'.$plantilla->imagen) }}"
                                     class="h-32 w-full object-cover" alt="Plantilla">
                                 <div class="p-2 text-xs font-semibold">

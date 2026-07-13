@@ -129,10 +129,10 @@
                 </p>
             </div>
             @if($editandoId)
-                <button type="button" wire:click="cancelarEdicion"
+                <flux:button type="button" wire:click="cancelarEdicion"
                     class="inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20">
                     Cancelar edición
-                </button>
+                </flux:button>
             @endif
         </div>
 
@@ -151,7 +151,7 @@
                     </div>
 
                     <label class="group flex min-h-44 cursor-pointer flex-col items-center justify-center rounded-xl border border-neutral-200 bg-white px-4 py-5 text-center transition hover:border-blue-400 hover:bg-blue-50 dark:border-neutral-700 dark:bg-neutral-950 dark:hover:border-blue-600 dark:hover:bg-blue-950/30">
-                        <input type="file" wire:model="marcoDesktop" accept="image/jpeg,image/png,image/webp" class="sr-only">
+                        <flux:input type="file" wire:model="marcoDesktop" accept="image/jpeg,image/png,image/webp" class="sr-only" />
                         @if($marcoDesktop)
                             @php [$dw, $dh] = @getimagesize($marcoDesktop->getRealPath()) ?: [null, null]; @endphp
                             <img src="{{ $marcoDesktop->temporaryUrl() }}" class="h-28 w-full rounded-lg object-contain" alt="Vista previa desktop">
@@ -168,7 +168,7 @@
 
                     @if($marcoEditando && ($marcoEditando->marco_desktop ?: $marcoEditando->marco))
                         <label class="mt-3 flex items-center gap-2 text-xs text-red-600 dark:text-red-400">
-                            <input type="checkbox" wire:model="quitarDesktop" class="rounded border-neutral-300">
+                            <flux:checkbox wire:model="quitarDesktop" class="rounded border-neutral-300" />
                             Quitar la versión desktop actual
                         </label>
                     @endif
@@ -188,7 +188,7 @@
                     </div>
 
                     <label class="group flex min-h-44 cursor-pointer flex-col items-center justify-center rounded-xl border border-neutral-200 bg-white px-4 py-5 text-center transition hover:border-violet-400 hover:bg-violet-50 dark:border-neutral-700 dark:bg-neutral-950 dark:hover:border-violet-600 dark:hover:bg-violet-950/30">
-                        <input type="file" wire:model="marcoMobile" accept="image/jpeg,image/png,image/webp" class="sr-only">
+                        <flux:input type="file" wire:model="marcoMobile" accept="image/jpeg,image/png,image/webp" class="sr-only" />
                         @if($marcoMobile)
                             @php [$mw, $mh] = @getimagesize($marcoMobile->getRealPath()) ?: [null, null]; @endphp
                             <img src="{{ $marcoMobile->temporaryUrl() }}" class="h-28 w-full rounded-lg object-contain" alt="Vista previa móvil">
@@ -205,7 +205,7 @@
 
                     @if($marcoEditando && $marcoEditando->marco_mobile)
                         <label class="mt-3 flex items-center gap-2 text-xs text-red-600 dark:text-red-400">
-                            <input type="checkbox" wire:model="quitarMobile" class="rounded border-neutral-300">
+                            <flux:checkbox wire:model="quitarMobile" class="rounded border-neutral-300" />
                             Quitar la versión móvil actual
                         </label>
                     @endif
@@ -217,7 +217,7 @@
                 <flux:input wire:model="nombre" label="Nombre del marco" badge="Obligatorio" placeholder="Ej. Clausura institucional 2026" />
                 <flux:input wire:model="categoria" label="Categoría" badge="Obligatorio" placeholder="Institucional, clausura, publicidad..." list="categorias-marcos" />
                 <datalist id="categorias-marcos">
-                    @foreach($categorias as $cat)<option value="{{ $cat }}">@endforeach
+                    @foreach($categorias as $cat)<option value="{{ $cat }}"></option>@endforeach
                 </datalist>
                 <flux:input wire:model="tagsTexto" label="Etiquetas" placeholder="graduación, azul, universidad" description="Sepáralas con comas." />
                 <div class="md:col-span-2 xl:col-span-2">
@@ -228,7 +228,7 @@
 
             <div class="flex flex-col gap-4 rounded-xl border border-neutral-200 bg-neutral-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-neutral-800 dark:bg-neutral-950/60">
                 <label class="flex cursor-pointer items-center gap-3">
-                    <input type="checkbox" wire:model="activo" class="h-5 w-5 rounded border-neutral-300 text-blue-600 focus:ring-blue-500">
+                    <flux:checkbox wire:model="activo" class="h-5 w-5 rounded border-neutral-300 text-blue-600 focus:ring-blue-500" />
                     <span>
                         <span class="block text-sm font-bold text-neutral-800 dark:text-neutral-100">Marco activo</span>
                         <span class="block text-xs text-neutral-500">Disponible inmediatamente en System Images.</span>
@@ -314,14 +314,14 @@
                     class="group overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg dark:border-neutral-800 dark:bg-neutral-900"
                 >
                     <div class="relative aspect-[16/10] overflow-hidden bg-[linear-gradient(45deg,#e5e7eb_25%,transparent_25%),linear-gradient(-45deg,#e5e7eb_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#e5e7eb_75%),linear-gradient(-45deg,transparent_75%,#e5e7eb_75%)] bg-[length:18px_18px] bg-[position:0_0,0_9px,9px_-9px,-9px_0px] dark:bg-neutral-950">
-                        <button type="button" class="marco-handle absolute left-2 top-2 z-20 cursor-grab rounded-lg bg-black/65 px-2 py-1 text-xs font-bold text-white backdrop-blur" title="Arrastrar">☰</button>
+                        <flux:button type="button" class="marco-handle absolute left-2 top-2 z-20 cursor-grab rounded-lg bg-black/65 px-2 py-1 text-xs font-bold text-white backdrop-blur" title="Arrastrar">☰</flux:button>
 
                         <div class="absolute right-2 top-2 z-20 flex rounded-lg bg-black/65 p-1 text-[10px] font-bold text-white backdrop-blur">
                             @if($desktop)
-                                <button type="button" @click="tab='desktop'" :class="tab==='desktop' ? 'bg-white text-black' : ''" class="rounded-md px-2 py-1 transition">DESKTOP</button>
+                                <flux:button type="button" @click="tab='desktop'" :class="tab==='desktop' ? 'bg-white text-black' : ''" class="rounded-md px-2 py-1 transition">DESKTOP</flux:button>
                             @endif
                             @if($mobile)
-                                <button type="button" @click="tab='mobile'" :class="tab==='mobile' ? 'bg-white text-black' : ''" class="rounded-md px-2 py-1 transition">MÓVIL</button>
+                                <flux:button type="button" @click="tab='mobile'" :class="tab==='mobile' ? 'bg-white text-black' : ''" class="rounded-md px-2 py-1 transition">MÓVIL</flux:button>
                             @endif
                         </div>
 
@@ -393,15 +393,15 @@
 
                         @if($marco->trashed())
                             <div class="grid grid-cols-2 gap-2">
-                                <button type="button" @click="confirmRestore({{ $marco->id }}, @js($marco->nombre ?: $marco->descripcion))" class="rounded-lg border border-emerald-200 px-3 py-2 text-xs font-bold text-emerald-700 transition hover:bg-emerald-50 dark:border-emerald-900/60 dark:text-emerald-400 dark:hover:bg-emerald-950/30">Restaurar</button>
-                                <button type="button" @click="confirmForceDelete({{ $marco->id }}, @js($marco->nombre ?: $marco->descripcion))" class="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-600 transition hover:bg-red-50 dark:border-red-900/60 dark:text-red-400 dark:hover:bg-red-950/30">Eliminar definitivamente</button>
+                                <flux:button type="button" @click="confirmRestore({{ $marco->id }}, @js($marco->nombre ?: $marco->descripcion))" class="rounded-lg border border-emerald-200 px-3 py-2 text-xs font-bold text-emerald-700 transition hover:bg-emerald-50 dark:border-emerald-900/60 dark:text-emerald-400 dark:hover:bg-emerald-950/30">Restaurar</flux:button>
+                                <flux:button type="button" @click="confirmForceDelete({{ $marco->id }}, @js($marco->nombre ?: $marco->descripcion))" class="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-600 transition hover:bg-red-50 dark:border-red-900/60 dark:text-red-400 dark:hover:bg-red-950/30">Eliminar definitivamente</flux:button>
                             </div>
                         @else
                             <div class="grid grid-cols-4 gap-2">
-                                <button type="button" wire:click="editarMarco({{ $marco->id }})" class="rounded-lg border border-neutral-200 px-2 py-2 text-xs font-bold text-neutral-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 dark:border-neutral-700 dark:text-neutral-200 dark:hover:border-blue-700 dark:hover:bg-blue-950/30" title="Editar">Editar</button>
-                                <button type="button" @click="confirmDuplicate({{ $marco->id }}, @js($marco->nombre ?: $marco->descripcion))" class="rounded-lg border border-neutral-200 px-2 py-2 text-xs font-bold text-neutral-700 transition hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700 dark:border-neutral-700 dark:text-neutral-200 dark:hover:border-violet-700 dark:hover:bg-violet-950/30" title="Duplicar">Copiar</button>
-                                <button type="button" @click="confirmToggle({{ $marco->id }}, @js((bool)$marco->activo), @js($marco->nombre ?: $marco->descripcion))" class="rounded-lg border border-neutral-200 px-2 py-2 text-xs font-bold text-neutral-700 transition hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700 dark:border-neutral-700 dark:text-neutral-200 dark:hover:border-amber-700 dark:hover:bg-amber-950/30" title="{{ $marco->activo ? 'Desactivar' : 'Activar' }}">{{ $marco->activo ? 'Pausar' : 'Activar' }}</button>
-                                <button type="button" @click="confirmDelete({{ $marco->id }}, @js($marco->nombre ?: $marco->descripcion))" class="rounded-lg border border-red-200 px-2 py-2 text-xs font-bold text-red-600 transition hover:bg-red-50 dark:border-red-900/60 dark:text-red-400 dark:hover:bg-red-950/30" title="Eliminar">Eliminar</button>
+                                <flux:button type="button" wire:click="editarMarco({{ $marco->id }})" class="rounded-lg border border-neutral-200 px-2 py-2 text-xs font-bold text-neutral-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 dark:border-neutral-700 dark:text-neutral-200 dark:hover:border-blue-700 dark:hover:bg-blue-950/30" title="Editar">Editar</flux:button>
+                                <flux:button type="button" @click="confirmDuplicate({{ $marco->id }}, @js($marco->nombre ?: $marco->descripcion))" class="rounded-lg border border-neutral-200 px-2 py-2 text-xs font-bold text-neutral-700 transition hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700 dark:border-neutral-700 dark:text-neutral-200 dark:hover:border-violet-700 dark:hover:bg-violet-950/30" title="Duplicar">Copiar</flux:button>
+                                <flux:button type="button" @click="confirmToggle({{ $marco->id }}, @js((bool)$marco->activo), @js($marco->nombre ?: $marco->descripcion))" class="rounded-lg border border-neutral-200 px-2 py-2 text-xs font-bold text-neutral-700 transition hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700 dark:border-neutral-700 dark:text-neutral-200 dark:hover:border-amber-700 dark:hover:bg-amber-950/30" title="{{ $marco->activo ? 'Desactivar' : 'Activar' }}">{{ $marco->activo ? 'Pausar' : 'Activar' }}</flux:button>
+                                <flux:button type="button" @click="confirmDelete({{ $marco->id }}, @js($marco->nombre ?: $marco->descripcion))" class="rounded-lg border border-red-200 px-2 py-2 text-xs font-bold text-red-600 transition hover:bg-red-50 dark:border-red-900/60 dark:text-red-400 dark:hover:bg-red-950/30" title="Eliminar">Eliminar</flux:button>
                             </div>
                         @endif
                     </div>
@@ -423,7 +423,7 @@
         <div class="relative max-h-[92vh] w-full max-w-6xl overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-neutral-900">
             <div class="flex items-center justify-between border-b border-neutral-200 px-4 py-3 dark:border-neutral-800">
                 <h3 class="font-bold text-neutral-900 dark:text-white" x-text="previewTitle"></h3>
-                <button type="button" @click="previewOpen=false" class="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 text-xl hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700">×</button>
+                <flux:button type="button" @click="previewOpen=false" class="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 text-xl hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700">×</flux:button>
             </div>
             <div class="max-h-[82vh] overflow-auto bg-[linear-gradient(45deg,#e5e7eb_25%,transparent_25%),linear-gradient(-45deg,#e5e7eb_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#e5e7eb_75%),linear-gradient(-45deg,transparent_75%,#e5e7eb_75%)] bg-[length:24px_24px] bg-[position:0_0,0_12px,12px_-12px,-12px_0px] p-6 dark:bg-neutral-950">
                 <img :src="previewUrl" :alt="previewTitle" class="mx-auto max-h-[76vh] max-w-full object-contain">

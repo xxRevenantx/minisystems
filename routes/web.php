@@ -10,6 +10,8 @@ use Laravel\Fortify\Features;
 use App\Http\Controllers\ImagesController;
 use App\Http\Controllers\PDFController;
 use App\Http\Controllers\ReconocimientoController;
+use App\Http\Controllers\CreativeCsvController;
+use App\Http\Controllers\ValidationController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -19,7 +21,23 @@ Route::view('dashboard', 'dashboard')
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
+Route::get('verificar/{codigo}', [ValidationController::class, 'show'])
+    ->name('validacion.publica');
+
 Route::middleware(['auth'])->group(function () {
+
+    // MINISYSTEMS STUDIO: clientes, personas, campañas, biblioteca, plantillas y producción.
+    Route::get('studio/{section}', function (string $section) {
+        abort_unless(in_array($section, \App\Livewire\Creative\CreativeHub::SECTIONS, true), 404);
+        return view('creative.index', compact('section'));
+    })->name('studio.section');
+
+    Route::get('studio-personas-plantilla.csv', [CreativeCsvController::class, 'personasPlantilla'])
+        ->name('studio.personas.plantilla');
+    Route::get('studio-personas-exportar.csv', [CreativeCsvController::class, 'personasExportar'])
+        ->name('studio.personas.exportar');
+    Route::get('studio-generador-plantilla.csv', [CreativeCsvController::class, 'generadorPlantilla'])
+        ->name('studio.generador.plantilla');
 
 
     // MIS RUTAS

@@ -174,8 +174,8 @@
 
         <div class="grid gap-6 p-6 lg:grid-cols-[1.25fr_.75fr]">
             <div>
-                <input x-ref="designInput" type="file" wire:model="reconocimiento" x-on:change="fileSelected($event)"
-                    accept="image/png,image/jpeg" class="sr-only" id="reconocimiento-design-input">
+                <flux:input x-ref="designInput" type="file" wire:model="reconocimiento" x-on:change="fileSelected($event)"
+                    accept="image/png,image/jpeg" class="sr-only" id="reconocimiento-design-input" />
 
                 <div role="button" tabindex="0" x-on:click="openFilePicker()"
                     x-on:keydown.enter.prevent="openFilePicker()" x-on:keydown.space.prevent="openFilePicker()"
@@ -312,16 +312,16 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="m21 21-4.35-4.35m1.1-5.4a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z" />
                         </svg>
-                        <input x-model.debounce.200ms="search" type="search" placeholder="Buscar por nombre…"
-                            class="h-10 w-full rounded-xl border border-neutral-300 bg-white pl-9 pr-3 text-sm outline-none transition focus:border-[#006492] focus:ring-2 focus:ring-[#006492]/[0.15] dark:border-neutral-700 dark:bg-neutral-950">
+                        <flux:input x-model.debounce.200ms="search" type="search" placeholder="Buscar por nombre…"
+                            class="h-10 w-full rounded-xl border border-neutral-300 bg-white pl-9 pr-3 text-sm outline-none transition focus:border-[#006492] focus:ring-2 focus:ring-[#006492]/[0.15] dark:border-neutral-700 dark:bg-neutral-950" />
                     </label>
 
-                    <select x-model="status"
+                    <flux:select x-model="status"
                         class="h-10 rounded-xl border border-neutral-300 bg-white px-3 text-sm outline-none transition focus:border-[#006492] focus:ring-2 focus:ring-[#006492]/[0.15] dark:border-neutral-700 dark:bg-neutral-950">
-                        <option value="todos">Todos los estados</option>
-                        <option value="activo">Activos</option>
-                        <option value="inactivo">Inactivos</option>
-                    </select>
+                        <flux:select.option value="todos">Todos los estados</flux:select.option>
+                        <flux:select.option value="activo">Activos</flux:select.option>
+                        <flux:select.option value="inactivo">Inactivos</flux:select.option>
+                    </flux:select>
                 </div>
             </div>
         </div>
@@ -339,7 +339,7 @@
                         data-status="{{ $estadoImagen }}" x-show="cardVisible($el)"
                         x-transition.opacity.duration.150ms
                         class="group overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-[#006492]/[0.35] hover:shadow-lg dark:border-neutral-700 dark:bg-neutral-900">
-                        <button type="button" wire:click="editarImagen({{ $imagen->id }})"
+                        <flux:button type="button" wire:click="editarImagen({{ $imagen->id }})"
                             class="relative block h-52 w-full overflow-hidden bg-neutral-100 text-left dark:bg-neutral-950"
                             aria-label="Editar {{ $nombreImagen }}">
                             <img src="{{ asset('storage/imagenesReconocimientos/' . $imagen->imagen) }}"
@@ -358,7 +358,7 @@
                                 class="absolute right-3 top-3 rounded-full border border-white/60 bg-white/90 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-neutral-700 shadow-sm backdrop-blur dark:border-neutral-600 dark:bg-neutral-900/90 dark:text-neutral-200">
                                 {{ ucfirst($imagen->orientacion ?? 'horizontal') }}
                             </span>
-                        </button>
+                        </flux:button>
 
                         <div class="p-4">
                             <div class="flex items-start justify-between gap-3">
@@ -381,7 +381,7 @@
 
                             <div
                                 class="mt-4 grid grid-cols-2 gap-2 border-t border-neutral-100 pt-4 dark:border-neutral-800">
-                                <button type="button" wire:click="editarImagen({{ $imagen->id }})"
+                                <flux:button type="button" wire:click="editarImagen({{ $imagen->id }})"
                                     wire:loading.attr="disabled" wire:target="editarImagen({{ $imagen->id }})"
                                     class="inline-flex h-9 items-center justify-center gap-2 rounded-xl bg-[#006492]/10 px-3 text-sm font-semibold text-[#006492] transition hover:bg-[#006492] hover:text-white disabled:opacity-50 dark:bg-[#006492]/20 dark:text-sky-300 dark:hover:bg-[#006492] dark:hover:text-white">
                                     <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -389,9 +389,9 @@
                                             d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14.25v4.125A1.875 1.875 0 0 1 16.125 20.25H5.625A1.875 1.875 0 0 1 3.75 18.375V7.875A1.875 1.875 0 0 1 5.625 6H9.75" />
                                     </svg>
                                     Editar
-                                </button>
+                                </flux:button>
 
-                                <button type="button" data-name="{{ $nombreImagen }}"
+                                <flux:button type="button" data-name="{{ $nombreImagen }}"
                                     x-on:click="confirmarEliminacion({{ $imagen->id }}, $el.dataset.name)"
                                     class="inline-flex h-9 items-center justify-center gap-2 rounded-xl bg-red-50 px-3 text-sm font-semibold text-red-600 transition hover:bg-red-600 hover:text-white dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-600 dark:hover:text-white">
                                     <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -399,7 +399,7 @@
                                             d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673A2.25 2.25 0 0 1 15.916 21.75H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0V4.477c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
                                     </svg>
                                     Eliminar
-                                </button>
+                                </flux:button>
                             </div>
                         </div>
                     </article>
@@ -451,14 +451,14 @@
                             <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">Actualiza el nombre o reemplaza
                                 la imagen del fondo.</p>
                         </div>
-                        <button type="button" wire:click="closeModal"
+                        <flux:button type="button" wire:click="closeModal"
                             class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-neutral-100 text-neutral-600 transition hover:bg-neutral-200 hover:text-neutral-900 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700 dark:hover:text-white"
                             aria-label="Cerrar modal">
                             <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M6 18 18 6M6 6l12 12" />
                             </svg>
-                        </button>
+                        </flux:button>
                     </div>
 
                     <div class="grid gap-6 p-6 lg:grid-cols-[1.15fr_.85fr]">
@@ -513,11 +513,11 @@
 
                     <div
                         class="sticky bottom-0 flex flex-col-reverse gap-3 border-t border-neutral-200 bg-white/95 px-6 py-4 backdrop-blur sm:flex-row sm:justify-end dark:border-neutral-700 dark:bg-neutral-900/95">
-                        <button type="button" wire:click="closeModal"
+                        <flux:button type="button" wire:click="closeModal"
                             class="inline-flex h-10 items-center justify-center rounded-xl border border-neutral-300 px-4 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800">
                             Cancelar
-                        </button>
-                        <button type="submit" wire:loading.attr="disabled"
+                        </flux:button>
+                        <flux:button variant="primary" type="submit" wire:loading.attr="disabled"
                             wire:target="actualizarImagenReconocimiento,nuevaImagen"
                             class="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#006492] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#00557b] disabled:cursor-not-allowed disabled:opacity-50">
                             <svg wire:loading.remove wire:target="actualizarImagenReconocimiento" class="size-4"
@@ -534,7 +534,7 @@
                             </svg>
                             <span wire:loading.remove wire:target="actualizarImagenReconocimiento">Guardar cambios</span>
                             <span wire:loading wire:target="actualizarImagenReconocimiento">Guardando…</span>
-                        </button>
+                        </flux:button>
                     </div>
                 </form>
             </div>

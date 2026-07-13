@@ -178,24 +178,23 @@
                                     <flux:icon.loading variant="mini"/>
                                 </div>
                             @else
-                                <input
+                                <flux:input
                                     type="text"
                                     readonly
                                     value="{{ $manualSetupKey }}"
-                                    class="w-full p-3 bg-transparent outline-none text-stone-900 dark:text-stone-100"
+                                    class="w-full"
                                 />
 
-                                <button
+                                <flux:button
+                                    type="button"
+                                    variant="subtle"
+                                    icon="document-duplicate"
                                     @click="copy()"
-                                    class="px-3 transition-colors border-l cursor-pointer border-stone-200 dark:border-stone-600"
+                                    aria-label="Copiar clave manual"
                                 >
-                                    <flux:icon.document-duplicate x-show="!copied" variant="outline"></flux:icon>
-                                    <flux:icon.check
-                                        x-show="copied"
-                                        variant="solid"
-                                        class="text-green-500"
-                                    ></flux:icon>
-                                </button>
+                                    <span x-show="!copied">{{ __('Copy') }}</span>
+                                    <span x-show="copied" class="text-green-600">{{ __('Copied') }}</span>
+                                </flux:button>
                             @endempty
                         </div>
                     </div>

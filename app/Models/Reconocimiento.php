@@ -15,6 +15,10 @@ class Reconocimiento extends Model
     public const ESTADOS = ['borrador', 'revision', 'aprobado', 'generado', 'entregado', 'cancelado'];
 
     protected $fillable = [
+        'marca_id',
+        'proyecto_creativo_id',
+        'persona_id',
+        'registro_validacion_id',
         'reconocimiento_evento_id',
         'reconocimiento_tipo_id',
         'credencial_id',
@@ -48,6 +52,22 @@ class Reconocimiento extends Model
         ];
     }
 
+    public function marca()
+    {
+        return $this->belongsTo(Marca::class);
+    }
+    public function proyectoCreativo()
+    {
+        return $this->belongsTo(ProyectoCreativo::class, 'proyecto_creativo_id');
+    }
+    public function persona()
+    {
+        return $this->belongsTo(Persona::class);
+    }
+    public function registroValidacion()
+    {
+        return $this->belongsTo(RegistroValidacion::class);
+    }
     public function reconocimientoImagen()
     {
         return $this->belongsTo(ReconocimientoImagen::class, 'reconocimiento_imagen_id');

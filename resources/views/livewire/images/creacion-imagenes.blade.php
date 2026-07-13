@@ -42,8 +42,8 @@
                 2 => ['Configurar', 'Marco y ajustes'],
                 3 => ['Revisar', 'Vista previa y descarga'],
             ] as $numero => [$titulo, $subtitulo])
-                <button type="button" wire:click="irAlPaso({{ $numero }})"
-                    @disabled($numero > $paso)
+                <flux:button type="button" wire:click="irAlPaso({{ $numero }})"
+                    @disabled($numero> $paso)
                     class="relative flex items-center gap-3 px-3 py-4 text-left transition sm:px-5 {{ $paso === $numero ? 'bg-blue-50 dark:bg-blue-950/25' : 'bg-white dark:bg-neutral-900' }} {{ $numero > $paso ? 'cursor-not-allowed opacity-50' : 'hover:bg-neutral-50 dark:hover:bg-neutral-800/60' }}">
                     <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-black {{ $paso >= $numero ? 'bg-blue-600 text-white' : 'bg-neutral-100 text-neutral-500 dark:bg-neutral-800' }}">
                         @if($paso > $numero) ✓ @else {{ $numero }} @endif
@@ -55,7 +55,7 @@
                     @if($paso === $numero)
                         <span class="absolute inset-x-0 bottom-0 h-0.5 bg-blue-600"></span>
                     @endif
-                </button>
+                </flux:button>
             @endforeach
         </div>
 
@@ -70,7 +70,7 @@
                     :class="dragActive ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30' : 'border-neutral-300 bg-neutral-50/70 dark:border-neutral-700 dark:bg-neutral-950/40'"
                     class="relative flex min-h-64 flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-10 text-center transition"
                 >
-                    <input x-ref="imagesInput" id="images-upload" type="file" wire:model="images" multiple accept="image/jpeg,image/png,image/webp" class="sr-only">
+                    <flux:input x-ref="imagesInput" id="images-upload" type="file" wire:model="images" multiple accept="image/jpeg,image/png,image/webp" class="sr-only" />
                     <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-100 text-3xl text-blue-600 shadow-sm dark:bg-blue-500/15 dark:text-blue-300">⇧</div>
                     <h3 class="mt-5 text-lg font-black text-neutral-900 dark:text-white">Arrastra aquí tus imágenes</h3>
                     <p class="mt-1 max-w-lg text-sm text-neutral-500 dark:text-neutral-400">
@@ -100,9 +100,9 @@
                             <h3 class="font-black text-neutral-900 dark:text-white">{{ count($images) }} imagen(es) seleccionada(s)</h3>
                             <p class="text-xs text-neutral-500">Arrastra las tarjetas para definir el orden de los archivos dentro del ZIP.</p>
                         </div>
-                        <button type="button" wire:click="limpiarLote" class="rounded-xl border border-red-200 px-4 py-2 text-xs font-bold text-red-600 transition hover:bg-red-50 dark:border-red-900/60 dark:text-red-400 dark:hover:bg-red-950/30">
+                        <flux:button type="button" wire:click="limpiarLote" class="rounded-xl border border-red-200 px-4 py-2 text-xs font-bold text-red-600 transition hover:bg-red-50 dark:border-red-900/60 dark:text-red-400 dark:hover:bg-red-950/30">
                             Limpiar lote
-                        </button>
+                        </flux:button>
                     </div>
 
                     <div
@@ -132,8 +132,8 @@
                             <article wire:key="upload-{{ $key }}" data-id="{{ $tempId }}" class="group overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-950">
                                 <div class="relative aspect-[4/3] overflow-hidden bg-neutral-100 dark:bg-neutral-900">
                                     <img src="{{ $img->temporaryUrl() }}" alt="{{ $img->getClientOriginalName() }}" class="h-full w-full object-cover">
-                                    <button type="button" class="image-handle absolute left-2 top-2 cursor-grab rounded-lg bg-black/65 px-2 py-1 text-xs font-bold text-white backdrop-blur">☰</button>
-                                    <button type="button" wire:click="removeByTemp('{{ $tempId }}')" class="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/65 text-lg font-bold text-white backdrop-blur transition hover:bg-red-600">×</button>
+                                    <flux:button type="button" class="image-handle absolute left-2 top-2 cursor-grab rounded-lg bg-black/65 px-2 py-1 text-xs font-bold text-white backdrop-blur">☰</flux:button>
+                                    <flux:button type="button" wire:click="removeByTemp('{{ $tempId }}')" class="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/65 text-lg font-bold text-white backdrop-blur transition hover:bg-red-600">×</flux:button>
                                     <span class="absolute bottom-2 left-2 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-white shadow {{ $detected === 'mobile' ? 'bg-violet-600' : ($detected === 'square' ? 'bg-amber-500' : 'bg-blue-600') }}">
                                         {{ $detected === 'mobile' ? 'Vertical' : ($detected === 'square' ? 'Cuadrada' : 'Horizontal') }}
                                     </span>
@@ -222,6 +222,19 @@
                             <p class="text-xs text-neutral-500">Controla proporción, formato, calidad y nombres.</p>
                         </div>
 
+                        @if($presetsSociales->isNotEmpty())
+                            <flux:select wire:model.live="presetSocialId" label="Preset de red social">
+                                <flux:select.option value="">Medidas personalizadas</flux:select.option>
+                                @foreach($presetsSociales as $preset)
+                                    <flux:select.option value="{{ $preset->id }}">
+                                        {{ $preset->red_social }} · {{ $preset->nombre }} ({{ $preset->ancho }} × {{ $preset->alto }})
+                                    </flux:select.option>
+                                @endforeach
+                            </flux:select>
+                            <p class="-mt-2 text-[11px] text-neutral-500">Seleccionar un preset ajusta automáticamente las medidas y la orientación del lote.</p>
+                            @error('presetSocialId') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
+                        @endif
+
                         <div class="grid gap-3 sm:grid-cols-2">
                             <flux:select wire:model.live="fitMode" label="Ajuste de imagen">
                                 <flux:select.option value="cover">Recortar para llenar</flux:select.option>
@@ -240,7 +253,7 @@
                             <div class="mb-2 flex items-center justify-between text-xs font-semibold text-neutral-600 dark:text-neutral-300">
                                 <span>Calidad de salida</span><span>{{ $quality }}%</span>
                             </div>
-                            <input type="range" wire:model.live="quality" min="60" max="100" step="1" class="w-full accent-blue-600">
+                            <flux:input type="range" wire:model.live="quality" min="60" max="100" step="1" class="w-full accent-blue-600" />
                         </div>
 
                         <flux:input wire:model="renamePattern" label="Patrón de nombre" placeholder="{orig}_{index}" description="Variables: {orig}, {index}, {date}, {orientation}." />
@@ -254,7 +267,7 @@
                         </div>
 
                         <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-neutral-200 p-3 dark:border-neutral-800">
-                            <input type="checkbox" wire:model="organizeFolders" class="h-5 w-5 rounded border-neutral-300 text-blue-600">
+                            <flux:checkbox wire:model="organizeFolders" class="h-5 w-5 rounded border-neutral-300 text-blue-600" />
                             <span><span class="block text-sm font-bold text-neutral-800 dark:text-white">Organizar el ZIP por orientación</span><span class="block text-xs text-neutral-500">Crea las carpetas desktop/ y mobile/.</span></span>
                         </label>
                     </div>
@@ -267,9 +280,9 @@
                             <p class="text-xs text-neutral-500">Modifica únicamente las imágenes que necesiten una excepción.</p>
                         </div>
                         <div class="flex flex-wrap gap-2">
-                            <button type="button" wire:click="aplicarAImagenes('orientation')" class="rounded-lg border border-neutral-200 px-3 py-2 text-xs font-bold hover:bg-neutral-50 dark:border-neutral-700 dark:hover:bg-neutral-800">Aplicar orientación a todas</button>
-                            <button type="button" wire:click="aplicarAImagenes('fit')" class="rounded-lg border border-neutral-200 px-3 py-2 text-xs font-bold hover:bg-neutral-50 dark:border-neutral-700 dark:hover:bg-neutral-800">Aplicar ajuste a todas</button>
-                            <button type="button" wire:click="aplicarAImagenes('frame')" class="rounded-lg border border-neutral-200 px-3 py-2 text-xs font-bold hover:bg-neutral-50 dark:border-neutral-700 dark:hover:bg-neutral-800">Aplicar marco a todas</button>
+                            <flux:button type="button" wire:click="aplicarAImagenes('orientation')" class="rounded-lg border border-neutral-200 px-3 py-2 text-xs font-bold hover:bg-neutral-50 dark:border-neutral-700 dark:hover:bg-neutral-800">Aplicar orientación a todas</flux:button>
+                            <flux:button type="button" wire:click="aplicarAImagenes('fit')" class="rounded-lg border border-neutral-200 px-3 py-2 text-xs font-bold hover:bg-neutral-50 dark:border-neutral-700 dark:hover:bg-neutral-800">Aplicar ajuste a todas</flux:button>
+                            <flux:button type="button" wire:click="aplicarAImagenes('frame')" class="rounded-lg border border-neutral-200 px-3 py-2 text-xs font-bold hover:bg-neutral-50 dark:border-neutral-700 dark:hover:bg-neutral-800">Aplicar marco a todas</flux:button>
                         </div>
                     </div>
 
@@ -295,44 +308,44 @@
 
                                     <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
                                         <label class="text-xs font-semibold text-neutral-600 dark:text-neutral-300">Orientación
-                                            <select wire:model.live="imageSettings.{{ $key }}.orientation" class="mt-1 block w-full rounded-lg border-neutral-300 bg-white text-xs dark:border-neutral-700 dark:bg-neutral-900">
-                                                <option value="inherit">Usar configuración general</option>
-                                                <option value="desktop">Desktop</option>
-                                                <option value="mobile">Móvil</option>
-                                            </select>
+                                            <flux:select wire:model.live="imageSettings.{{ $key }}.orientation" class="mt-1 block w-full rounded-lg border-neutral-300 bg-white text-xs dark:border-neutral-700 dark:bg-neutral-900">
+                                                <flux:select.option value="inherit">Usar configuración general</flux:select.option>
+                                                <flux:select.option value="desktop">Desktop</flux:select.option>
+                                                <flux:select.option value="mobile">Móvil</flux:select.option>
+                                            </flux:select>
                                         </label>
                                         <label class="text-xs font-semibold text-neutral-600 dark:text-neutral-300">Marco
-                                            <select wire:model.live="imageSettings.{{ $key }}.frame" class="mt-1 block w-full rounded-lg border-neutral-300 bg-white text-xs dark:border-neutral-700 dark:bg-neutral-900">
-                                                <option value="global">Usar marco general</option>
-                                                <option value="none">Sin marco</option>
+                                            <flux:select wire:model.live="imageSettings.{{ $key }}.frame" class="mt-1 block w-full rounded-lg border-neutral-300 bg-white text-xs dark:border-neutral-700 dark:bg-neutral-900">
+                                                <flux:select.option value="global">Usar marco general</flux:select.option>
+                                                <flux:select.option value="none">Sin marco</flux:select.option>
                                                 @foreach($marcos as $item)
-                                                    <option value="{{ $item->id }}">{{ $item->nombre ?: $item->descripcion }}</option>
+                                                    <flux:select.option value="{{ $item->id }}">{{ $item->nombre ?: $item->descripcion }}</flux:select.option>
                                                 @endforeach
-                                            </select>
+                                            </flux:select>
                                         </label>
                                         <label class="text-xs font-semibold text-neutral-600 dark:text-neutral-300">Ajuste
-                                            <select wire:model.live="imageSettings.{{ $key }}.fit" class="mt-1 block w-full rounded-lg border-neutral-300 bg-white text-xs dark:border-neutral-700 dark:bg-neutral-900">
-                                                <option value="inherit">Usar ajuste general</option>
-                                                <option value="cover">Recortar</option>
-                                                <option value="contain">Completa</option>
-                                                <option value="blur">Fondo desenfocado</option>
-                                            </select>
+                                            <flux:select wire:model.live="imageSettings.{{ $key }}.fit" class="mt-1 block w-full rounded-lg border-neutral-300 bg-white text-xs dark:border-neutral-700 dark:bg-neutral-900">
+                                                <flux:select.option value="inherit">Usar ajuste general</flux:select.option>
+                                                <flux:select.option value="cover">Recortar</flux:select.option>
+                                                <flux:select.option value="contain">Completa</flux:select.option>
+                                                <flux:select.option value="blur">Fondo desenfocado</flux:select.option>
+                                            </flux:select>
                                         </label>
                                         <label class="text-xs font-semibold text-neutral-600 dark:text-neutral-300">Enfoque
-                                            <select wire:model.live="imageSettings.{{ $key }}.focus" class="mt-1 block w-full rounded-lg border-neutral-300 bg-white text-xs dark:border-neutral-700 dark:bg-neutral-900">
-                                                <option value="center">Centro</option>
-                                                <option value="top">Arriba</option>
-                                                <option value="bottom">Abajo</option>
-                                                <option value="left">Izquierda</option>
-                                                <option value="right">Derecha</option>
-                                                <option value="top-left">Superior izquierda</option>
-                                                <option value="top-right">Superior derecha</option>
-                                                <option value="bottom-left">Inferior izquierda</option>
-                                                <option value="bottom-right">Inferior derecha</option>
-                                            </select>
+                                            <flux:select wire:model.live="imageSettings.{{ $key }}.focus" class="mt-1 block w-full rounded-lg border-neutral-300 bg-white text-xs dark:border-neutral-700 dark:bg-neutral-900">
+                                                <flux:select.option value="center">Centro</flux:select.option>
+                                                <flux:select.option value="top">Arriba</flux:select.option>
+                                                <flux:select.option value="bottom">Abajo</flux:select.option>
+                                                <flux:select.option value="left">Izquierda</flux:select.option>
+                                                <flux:select.option value="right">Derecha</flux:select.option>
+                                                <flux:select.option value="top-left">Superior izquierda</flux:select.option>
+                                                <flux:select.option value="top-right">Superior derecha</flux:select.option>
+                                                <flux:select.option value="bottom-left">Inferior izquierda</flux:select.option>
+                                                <flux:select.option value="bottom-right">Inferior derecha</flux:select.option>
+                                            </flux:select>
                                         </label>
                                         <label class="text-xs font-semibold text-neutral-600 dark:text-neutral-300">Zoom <span class="float-right">{{ $meta['zoom'] ?? 100 }}%</span>
-                                            <input type="range" wire:model.live="imageSettings.{{ $key }}.zoom" min="100" max="180" step="5" class="mt-3 w-full accent-blue-600">
+                                            <flux:input type="range" wire:model.live="imageSettings.{{ $key }}.zoom" min="100" max="180" step="5" class="mt-3 w-full accent-blue-600" />
                                         </label>
                                     </div>
                                 </div>
@@ -444,7 +457,7 @@
                             </div>
                             <div class="mx-auto mt-3 flex max-w-4xl items-center gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3 dark:border-neutral-800 dark:bg-neutral-950">
                                 <span class="shrink-0 text-xs font-bold text-neutral-500">Original</span>
-                                <input type="range" min="8" max="92" x-model="compare" class="w-full accent-blue-600" aria-label="Comparar antes y después">
+                                <flux:input type="range" min="8" max="92" x-model="compare" class="w-full accent-blue-600" aria-label="Comparar antes y después" />
                                 <span class="shrink-0 text-xs font-bold text-blue-600">Resultado</span>
                             </div>
                         @endif
@@ -452,10 +465,10 @@
                         <div class="flex gap-2 overflow-x-auto pb-2">
                             @foreach($images as $index => $img)
                                 @php $key = sha1((string)$img->getFilename()); @endphp
-                                <button type="button" wire:click="seleccionarPreview('{{ $key }}')" class="relative h-20 w-28 shrink-0 overflow-hidden rounded-xl border-2 transition {{ $selectedPreviewKey === $key ? 'border-blue-600 ring-2 ring-blue-100 dark:ring-blue-900' : 'border-transparent opacity-70 hover:opacity-100' }}">
+                                <flux:button type="button" wire:click="seleccionarPreview('{{ $key }}')" class="relative h-20 w-28 shrink-0 overflow-hidden rounded-xl border-2 transition {{ $selectedPreviewKey === $key ? 'border-blue-600 ring-2 ring-blue-100 dark:ring-blue-900' : 'border-transparent opacity-70 hover:opacity-100' }}">
                                     <img src="{{ $img->temporaryUrl() }}" class="h-full w-full object-cover" alt="Vista {{ $index + 1 }}">
                                     <span class="absolute bottom-1 left-1 rounded bg-black/65 px-1.5 py-0.5 text-[9px] font-bold text-white">{{ $index + 1 }}</span>
-                                </button>
+                                </flux:button>
                             @endforeach
                         </div>
                     </section>

@@ -1,336 +1,204 @@
-<div x-data="{
-    abierto: JSON.parse(localStorage.getItem('collapse_crear_credencial') ?? 'false'),
-    guardado: @entangle('guardado'),
-
-    alternarCollapse() {
-        this.abierto = !this.abierto;
-        localStorage.setItem('collapse_crear_credencial', JSON.stringify(this.abierto));
-    },
-
-    cerrarAlerta() {
-        setTimeout(() => {
-            this.guardado = false;
-        }, 2500);
-    }
-}" x-init="$watch('guardado', value => {
-    if (value) cerrarAlerta();
-});" class="space-y-6">
-    <div
-        class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl shadow-slate-200/60 dark:border-zinc-800 dark:bg-zinc-950 dark:shadow-none">
-
-        {{-- ENCABEZADO DEL COLLAPSE --}}
-        <button type="button" x-on:click="alternarCollapse()"
-            class="group relative flex w-full items-center justify-between overflow-hidden border-b border-slate-200 bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-700 px-6 py-6 text-left text-white transition dark:border-zinc-800">
+<div
+    x-data="{
+        abierto: JSON.parse(localStorage.getItem('collapse_crear_credencial') ?? 'true'),
+        guardado: @entangle('guardado'),
+        alternar() {
+            this.abierto = !this.abierto;
+            localStorage.setItem('collapse_crear_credencial', JSON.stringify(this.abierto));
+        }
+    }"
+    x-init="$watch('guardado', value => { if(value) setTimeout(() => guardado = false, 2800) })"
+    class="space-y-6"
+>
+    <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl shadow-slate-200/50 dark:border-zinc-800 dark:bg-zinc-950 dark:shadow-none">
+        <flux:button variant="primary" type="button" @click="alternar"
+            class="relative flex w-full items-center justify-between overflow-hidden bg-gradient-to-r from-[#006492] via-sky-600 to-[#88AC2E] px-6 py-6 text-left text-white">
             <div class="absolute -right-16 -top-16 h-40 w-40 rounded-full bg-white/10"></div>
-            <div class="absolute -bottom-20 left-10 h-44 w-44 rounded-full bg-white/10"></div>
-
-            <div class="relative flex items-center gap-4">
-                <div
-                    class="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/20 bg-white/15 text-xl font-black shadow-lg backdrop-blur">
-                    ID
-                </div>
-
-                <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.25em] text-sky-100">
-                        Módulo de credenciales
-                    </p>
-
-                    <h2 class="mt-1 text-2xl font-bold tracking-tight">
-                        Crear nueva credencial
-                    </h2>
-
-                    <p class="mt-1 text-sm text-sky-50">
-                        Da clic para abrir o cerrar el formulario de captura.
-                    </p>
-                </div>
+            <div class="relative">
+                <p class="text-xs font-black uppercase tracking-[.26em] text-white/75">Credenciales generales</p>
+                <h2 class="mt-2 text-2xl font-black">Crear una identificación</h2>
+                <p class="mt-1 text-sm text-white/85">Gafetes de evento, personal, visitantes, membresías o credenciales escolares.</p>
             </div>
+            <span class="relative rounded-2xl bg-white/15 px-4 py-2 text-xs font-black" x-text="abierto ? 'Cerrar formulario' : 'Abrir formulario'"></span>
+        </flux:button>
 
-            <div class="relative flex items-center gap-3">
-                <span
-                    class="hidden rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold text-sky-50 backdrop-blur sm:inline-flex"
-                    x-text="abierto ? 'Formulario abierto' : 'Formulario cerrado'"></span>
-
-                <div class="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/20 bg-white/15 text-white shadow-lg transition duration-300 group-hover:scale-105"
-                    :class="{ 'rotate-180': abierto }">
-                    <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd"
-                            d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
-                            clip-rule="evenodd" />
-                    </svg>
-                </div>
-            </div>
-        </button>
-
-        {{-- CONTENIDO COLLAPSABLE --}}
-        <div x-show="abierto" x-cloak x-transition:enter="transition ease-out duration-300"
-            x-transition:enter-start="opacity-0 -translate-y-3" x-transition:enter-end="opacity-100 translate-y-0"
-            x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0"
-            x-transition:leave-end="opacity-0 -translate-y-3" class="p-6">
+        <div x-show="abierto" x-cloak x-transition class="p-6">
             <template x-if="guardado">
-                <div x-transition.opacity.duration.300ms
-                    class="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
-                    <div class="flex items-start gap-3">
-                        <div
-                            class="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-xs font-bold text-white">
-                            ✓
-                        </div>
-
-                        <div>
-                            <p class="font-semibold">Credencial registrada correctamente.</p>
-                            <p class="text-xs text-emerald-700 dark:text-emerald-300">
-                                Los datos fueron guardados en el sistema.
-                            </p>
-                        </div>
-                    </div>
+                <div class="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200">
+                    <strong>Credencial registrada correctamente.</strong>
+                    <span class="block text-xs">Ya está disponible para consulta y exportación.</span>
                 </div>
             </template>
 
-            <form wire:submit.prevent="guardar" class="space-y-6">
-                <div class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-
-                    {{-- NOMBRE --}}
-                    <div class="space-y-2 xl:col-span-2">
-                        <label for="nombre" class="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                            Nombre completo <span class="text-red-500">*</span>
-                        </label>
-
-                        <input id="nombre" type="text" wire:model.live="nombre"
-                            placeholder="Ej. Carlos Alberto Núñez Pérez"
-                            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-sky-500 dark:focus:ring-sky-900/40">
-
-                        @error('nombre')
-                            <p class="text-xs font-medium text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    {{-- MATRÍCULA --}}
-                    <div class="space-y-2">
-                        <label for="matricula" class="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                            Matrícula <span class="text-red-500">*</span>
-                        </label>
-
-                        <input id="matricula" type="text" wire:model.live="matricula" placeholder="Ej. CUM-2026-001"
-                            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-sky-500 dark:focus:ring-sky-900/40">
-
-                        @error('matricula')
-                            <p class="text-xs font-medium text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    {{-- CURP --}}
-                    <div class="space-y-2">
-                        <label for="curp" class="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                            CURP <span class="text-red-500">*</span>
-                        </label>
-
-                        <input id="curp" type="text" maxlength="18" wire:model.live="curp"
-                            placeholder="18 caracteres"
-                            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm uppercase text-slate-800 shadow-sm outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-sky-500 dark:focus:ring-sky-900/40">
-
-                        @error('curp')
-                            <p class="text-xs font-medium text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    {{-- NIVEL --}}
-                    <div class="space-y-2">
-                        <label for="nivel" class="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                            Nivel <span class="text-red-500">*</span>
-                        </label>
-
-                        <select id="nivel" wire:model.live="nivel"
-                            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-sky-500 dark:focus:ring-sky-900/40">
-                            <option value="">Selecciona un nivel</option>
-
-                            @foreach ($niveles as $item)
-                                <option value="{{ $item }}">{{ $item }}</option>
-                            @endforeach
-                        </select>
-
-                        @error('nivel')
-                            <p class="text-xs font-medium text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    {{-- GRADO --}}
-                    <div class="space-y-2">
-                        <label for="grado" class="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                            Grado
-                            @if ($nivel !== 'Licenciatura')
-                                <span class="text-red-500">*</span>
-                            @endif
-                        </label>
-
-                        <select id="grado" wire:model.live="grado"
-                            x-bind:disabled="$wire.nivel === 'Licenciatura' || $wire.nivel === ''"
-                            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:disabled:bg-zinc-900/50 dark:disabled:text-zinc-600 dark:focus:border-sky-500 dark:focus:ring-sky-900/40">
-                            <option value="">
-                                {{ $nivel === 'Licenciatura' ? 'No aplica para licenciatura' : 'Selecciona un grado' }}
-                            </option>
-
-                            @foreach ($grados as $item)
-                                <option value="{{ $item }}">{{ $item }}</option>
-                            @endforeach
-                        </select>
-
-                        @error('grado')
-                            <p class="text-xs font-medium text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    {{-- GRUPO --}}
-                    <div class="space-y-2">
-                        <label for="grupo" class="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                            Grupo
-                            @if ($nivel !== 'Licenciatura')
-                                <span class="text-red-500">*</span>
-                            @endif
-                        </label>
-
-                        <select id="grupo" wire:model.live="grupo"
-                            x-bind:disabled="$wire.nivel === 'Licenciatura' || $wire.nivel === ''"
-                            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:disabled:bg-zinc-900/50 dark:disabled:text-zinc-600 dark:focus:border-sky-500 dark:focus:ring-sky-900/40">
-                            <option value="">
-                                {{ $nivel === 'Licenciatura' ? 'No aplica para licenciatura' : 'Selecciona un grupo' }}
-                            </option>
-
-                            @foreach ($grupos as $item)
-                                <option value="{{ $item }}">{{ $item }}</option>
-                            @endforeach
-                        </select>
-
-                        @error('grupo')
-                            <p class="text-xs font-medium text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    {{-- LICENCIATURA --}}
-                    <div class="space-y-2 xl:col-span-2">
-                        <label for="licenciatura" class="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                            Licenciatura
-                            @if ($nivel === 'Licenciatura')
-                                <span class="text-red-500">*</span>
-                            @endif
-                        </label>
-
-                        <select id="licenciatura" wire:model.live="licenciatura"
-                            x-bind:disabled="$wire.nivel !== 'Licenciatura'"
-                            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:disabled:bg-zinc-900/50 dark:disabled:text-zinc-600 dark:focus:border-sky-500 dark:focus:ring-sky-900/40">
-                            <option value="">
-                                {{ $nivel === 'Licenciatura' ? 'Selecciona una licenciatura' : 'Disponible solo para nivel licenciatura' }}
-                            </option>
-
-                            @foreach ($licenciaturas as $item)
-                                <option value="{{ $item }}">{{ $item }}</option>
-                            @endforeach
-                        </select>
-
-                        @error('licenciatura')
-                            <p class="text-xs font-medium text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    {{-- CICLO ESCOLAR --}}
-                    <div class="space-y-2">
-                        <label for="ciclo_escolar" class="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                            Ciclo escolar
-                        </label>
-
-                        <input id="ciclo_escolar" type="text" wire:model.live="ciclo_escolar"
-                            placeholder="Ej. 2025 - 2026"
-                            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-sky-500 dark:focus:ring-sky-900/40">
-
-                        @error('ciclo_escolar')
-                            <p class="text-xs font-medium text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    {{-- VIGENCIA --}}
-                    <div class="space-y-2">
-                        <label for="vigencia" class="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                            Vigencia
-                        </label>
-
-                        <input id="vigencia" type="text" wire:model.live="vigencia"
-                            placeholder="Ej. Agosto 2026"
-                            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-sky-500 dark:focus:ring-sky-900/40">
-
-                        @error('vigencia')
-                            <p class="text-xs font-medium text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    {{-- TELÉFONO --}}
-                    <div class="space-y-2">
-                        <label for="telefono" class="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                            Teléfono
-                        </label>
-
-                        <input id="telefono" type="text" wire:model.live="telefono"
-                            placeholder="Ej. 767 000 0000"
-                            class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-sky-500 dark:focus:ring-sky-900/40">
-
-                        @error('telefono')
-                            <p class="text-xs font-medium text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    {{-- DOMICILIO --}}
-                    <div class="space-y-2 md:col-span-2 xl:col-span-3">
-                        <label for="domicilio" class="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                            Domicilio
-                        </label>
-
-                        <textarea id="domicilio" rows="3" wire:model.live="domicilio"
-                            placeholder="Calle, colonia, localidad o referencia del domicilio"
-                            class="w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-sky-500 dark:focus:ring-sky-900/40"></textarea>
-
-                        @error('domicilio')
-                            <p class="text-xs font-medium text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
+            @if($errors->any())
+                <div class="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/30 dark:text-red-200">
+                    <p class="font-black">Revisa los campos marcados:</p>
+                    <ul class="mt-2 list-disc space-y-1 pl-5">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
                 </div>
+            @endif
 
-                {{-- NOTA --}}
-                <div
-                    class="rounded-2xl border border-sky-100 bg-sky-50/80 px-4 py-4 text-sm text-sky-800 dark:border-sky-900/50 dark:bg-sky-950/30 dark:text-sky-200">
-                    <p class="font-semibold">Nota importante</p>
-                    <p class="mt-1 text-xs leading-5">
-                        Si seleccionas el nivel <strong>Licenciatura</strong>, los campos de grado y grupo se desactivan
-                        automáticamente.
-                        Si seleccionas preescolar, primaria, secundaria o bachillerato, la licenciatura queda
-                        deshabilitada.
-                    </p>
-                </div>
+            <form wire:submit.prevent="guardar" class="space-y-7">
+                <section>
+                    <div class="mb-4">
+                        <p class="text-xs font-black uppercase tracking-widest text-[#006492]">Contexto</p>
+                        <h3 class="text-lg font-black">Tipo y vinculación</h3>
+                    </div>
+                    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                        <label class="text-sm font-bold">Tipo de credencial
+                            <flux:select wire:model.live="tipo" class="mt-1 w-full rounded-2xl border-slate-300 dark:border-zinc-700 dark:bg-zinc-900">
+                                @foreach($tipos as $value => $label)<flux:select.option value="{{ $value }}">{{ $label }}</flux:select.option>@endforeach
+                            </flux:select>
+                        </label>
+                        <label class="text-sm font-bold">Persona existente
+                            <flux:select wire:model.live="persona_id" class="mt-1 w-full rounded-2xl border-slate-300 dark:border-zinc-700 dark:bg-zinc-900">
+                                <flux:select.option value="">Captura manual</flux:select.option>
+                                @foreach($personas as $persona)<flux:select.option value="{{ $persona->id }}">{{ $persona->nombre }}</flux:select.option>@endforeach
+                            </flux:select>
+                        </label>
+                        <label class="text-sm font-bold">Marca o cliente
+                            <flux:select wire:model="marca_id" class="mt-1 w-full rounded-2xl border-slate-300 dark:border-zinc-700 dark:bg-zinc-900">
+                                <flux:select.option value="">Sin marca</flux:select.option>
+                                @foreach($marcas as $marca)<flux:select.option value="{{ $marca->id }}">{{ $marca->nombre }}</flux:select.option>@endforeach
+                            </flux:select>
+                        </label>
+                        <label class="text-sm font-bold">Proyecto o evento
+                            <flux:select wire:model="proyecto_creativo_id" class="mt-1 w-full rounded-2xl border-slate-300 dark:border-zinc-700 dark:bg-zinc-900">
+                                <flux:select.option value="">Sin proyecto</flux:select.option>
+                                @foreach($proyectos as $proyecto)<flux:select.option value="{{ $proyecto->id }}">{{ $proyecto->nombre }}</flux:select.option>@endforeach
+                            </flux:select>
+                        </label>
+                    </div>
+                </section>
 
-                {{-- BOTONES --}}
-                <div
-                    class="flex flex-col-reverse gap-3 border-t border-slate-200 pt-6 sm:flex-row sm:items-center sm:justify-end dark:border-zinc-800">
-                    <button type="button" wire:click="limpiarFormulario"
-                        class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
-                        wire:loading.attr="disabled">
-                        Limpiar
-                    </button>
+                <section class="rounded-3xl border border-slate-200 bg-slate-50/60 p-5 dark:border-zinc-800 dark:bg-zinc-900/40">
+                    <div class="mb-4">
+                        <p class="text-xs font-black uppercase tracking-widest text-[#006492]">Información principal</p>
+                        <h3 class="text-lg font-black">Datos visibles en la credencial</h3>
+                    </div>
+                    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                        <label class="text-sm font-bold xl:col-span-2">Nombre completo
+                            <flux:input wire:model.live="nombre" class="mt-1 w-full rounded-2xl border-slate-300 dark:border-zinc-700 dark:bg-zinc-950" placeholder="Nombre de la persona" />
+                        </label>
+                        <div class="grid grid-cols-[1fr_auto] gap-2">
+                            <label class="text-sm font-bold">Folio o identificador
+                                <flux:input wire:model="folio" class="mt-1 w-full rounded-2xl border-slate-300 dark:border-zinc-700 dark:bg-zinc-950" placeholder="Se genera automáticamente" />
+                            </label>
+                            <flux:button type="button" wire:click="generarFolio" class="self-end rounded-2xl border border-slate-300 px-4 py-3 text-xs font-black dark:border-zinc-700">Generar</flux:button>
+                        </div>
+                        <label class="text-sm font-bold">Cargo o función
+                            <flux:input wire:model="cargo" class="mt-1 w-full rounded-2xl border-slate-300 dark:border-zinc-700 dark:bg-zinc-950" placeholder="Ponente, empleado, visitante..." />
+                        </label>
+                        <label class="text-sm font-bold">Organización
+                            <flux:input wire:model="organizacion" class="mt-1 w-full rounded-2xl border-slate-300 dark:border-zinc-700 dark:bg-zinc-950" />
+                        </label>
+                        <label class="text-sm font-bold">Vigencia
+                            <flux:input wire:model="vigencia" class="mt-1 w-full rounded-2xl border-slate-300 dark:border-zinc-700 dark:bg-zinc-950" placeholder="Ej. 31 de diciembre de 2026" />
+                        </label>
+                        <label class="text-sm font-bold">Correo
+                            <flux:input wire:model="correo" type="email" class="mt-1 w-full rounded-2xl border-slate-300 dark:border-zinc-700 dark:bg-zinc-950" />
+                        </label>
+                        <label class="text-sm font-bold">Teléfono
+                            <flux:input wire:model="telefono" class="mt-1 w-full rounded-2xl border-slate-300 dark:border-zinc-700 dark:bg-zinc-950" />
+                        </label>
+                        <label class="text-sm font-bold">Estado
+                            <flux:select wire:model="estado" class="mt-1 w-full rounded-2xl border-slate-300 dark:border-zinc-700 dark:bg-zinc-950">
+                                @foreach(['activa','inactiva','vencida','cancelada'] as $value)<flux:select.option value="{{ $value }}">{{ ucfirst($value) }}</flux:select.option>@endforeach
+                            </flux:select>
+                        </label>
+                        <label class="text-sm font-bold xl:col-span-2">Fotografía
+                            <flux:input wire:model="foto" type="file" accept="image/jpeg,image/png,image/webp" class="mt-1 block w-full rounded-2xl border border-dashed border-slate-300 p-3 text-xs dark:border-zinc-700" />
+                        </label>
+                        <label class="text-sm font-bold xl:col-span-3">Domicilio o información adicional
+                            <flux:textarea wire:model="domicilio" rows="3" class="mt-1 w-full rounded-2xl border-slate-300 dark:border-zinc-700 dark:bg-zinc-950"></flux:textarea>
+                        </label>
+                    </div>
+                </section>
 
-                    <button type="submit"
-                        class="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-700 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-blue-500/30 disabled:cursor-not-allowed disabled:opacity-70"
-                        wire:loading.attr="disabled" wire:target="guardar">
-                        <span wire:loading.remove wire:target="guardar">
-                            Guardar credencial
+                @if($tipo === 'escolar')
+                    <section class="rounded-3xl border border-blue-200 bg-blue-50/70 p-5 dark:border-blue-900 dark:bg-blue-950/20">
+                        <div class="mb-4">
+                            <p class="text-xs font-black uppercase tracking-widest text-blue-700 dark:text-blue-300">Datos escolares opcionales</p>
+                            <h3 class="text-lg font-black">Información académica</h3>
+                        </div>
+                        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                            <label class="text-sm font-bold">Matrícula
+                                <flux:input wire:model="matricula" class="mt-1 w-full rounded-2xl border-blue-200 dark:border-blue-900 dark:bg-zinc-950" />
+                            </label>
+                            <label class="text-sm font-bold">CURP
+                                <flux:input wire:model="curp" maxlength="18" class="mt-1 w-full rounded-2xl border-blue-200 uppercase dark:border-blue-900 dark:bg-zinc-950" />
+                            </label>
+                            <label class="text-sm font-bold">Nivel
+                                <flux:select wire:model.live="nivel" class="mt-1 w-full rounded-2xl border-blue-200 dark:border-blue-900 dark:bg-zinc-950">
+                                    <flux:select.option value="">Seleccionar</flux:select.option>
+                                    @foreach($niveles as $item)<flux:select.option value="{{ $item }}">{{ $item }}</flux:select.option>@endforeach
+                                </flux:select>
+                            </label>
+                            <label class="text-sm font-bold">Ciclo escolar
+                                <flux:input wire:model="ciclo_escolar" class="mt-1 w-full rounded-2xl border-blue-200 dark:border-blue-900 dark:bg-zinc-950" />
+                            </label>
+
+                            @if($nivel !== 'Licenciatura')
+                                <label class="text-sm font-bold">Grado
+                                    <flux:select wire:model="grado" class="mt-1 w-full rounded-2xl border-blue-200 dark:border-blue-900 dark:bg-zinc-950">
+                                        <flux:select.option value="">Seleccionar</flux:select.option>
+                                        @foreach($grados as $item)<flux:select.option value="{{ $item }}">{{ $item }}</flux:select.option>@endforeach
+                                    </flux:select>
+                                </label>
+                                <label class="text-sm font-bold">Grupo
+                                    <flux:select wire:model="grupo" class="mt-1 w-full rounded-2xl border-blue-200 dark:border-blue-900 dark:bg-zinc-950">
+                                        <flux:select.option value="">Seleccionar</flux:select.option>
+                                        @foreach($grupos as $item)<flux:select.option value="{{ $item }}">{{ $item }}</flux:select.option>@endforeach
+                                    </flux:select>
+                                </label>
+                            @else
+                                <label class="text-sm font-bold md:col-span-2">Licenciatura
+                                    <flux:select wire:model="licenciatura" class="mt-1 w-full rounded-2xl border-blue-200 dark:border-blue-900 dark:bg-zinc-950">
+                                        <flux:select.option value="">Seleccionar</flux:select.option>
+                                        @foreach($licenciaturas as $item)<flux:select.option value="{{ $item }}">{{ $item }}</flux:select.option>@endforeach
+                                    </flux:select>
+                                </label>
+                            @endif
+                        </div>
+                    </section>
+                @endif
+
+                <section class="rounded-3xl border border-violet-200 bg-violet-50/70 p-5 dark:border-violet-900 dark:bg-violet-950/20">
+                    <label class="flex items-center justify-between gap-4">
+                        <span><strong class="block text-sm text-violet-900 dark:text-violet-200">Diseñar reverso</strong><small class="text-xs text-slate-500">Agrega información adicional o una imagen para la parte posterior.</small></span>
+                        <flux:checkbox wire:model.live="tiene_reverso" class="h-5 w-5 rounded border-violet-300 text-violet-600" />
+                    </label>
+                    @if($tiene_reverso)
+                        <div class="mt-4 grid gap-4 md:grid-cols-2">
+                            <label class="text-sm font-bold">Texto del reverso
+                                <flux:textarea wire:model="reverso_texto" rows="5" class="mt-1 w-full rounded-2xl border-violet-200 dark:border-violet-900 dark:bg-zinc-950" placeholder="Indicaciones, contacto, términos, datos del evento..."></flux:textarea>
+                            </label>
+                            <label class="text-sm font-bold">Imagen de fondo del reverso
+                                <flux:input wire:model="reverso_imagen" type="file" accept="image/jpeg,image/png,image/webp" class="mt-1 block w-full rounded-2xl border border-dashed border-violet-300 p-3 text-xs dark:border-violet-800" />
+                                <small class="mt-2 block font-normal text-slate-500">Opcional. Si no se carga, se utilizarán los colores de la marca.</small>
+                            </label>
+                        </div>
+                    @endif
+                </section>
+
+                <section class="flex flex-col gap-4 rounded-3xl border border-emerald-200 bg-emerald-50/70 p-5 dark:border-emerald-900 dark:bg-emerald-950/20 sm:flex-row sm:items-center sm:justify-between">
+                    <label class="flex items-center gap-3">
+                        <flux:checkbox wire:model="generarValidacion" class="h-5 w-5 rounded border-emerald-300 text-emerald-600" />
+                        <span>
+                            <strong class="block text-sm">Crear folio de validación pública</strong>
+                            <small class="text-xs text-slate-500">Genera un código consultable desde una URL pública.</small>
                         </span>
+                    </label>
+                    <span class="rounded-full bg-white px-3 py-2 text-xs font-black text-emerald-700 shadow-sm dark:bg-zinc-950">Recomendado</span>
+                </section>
 
-                        <span wire:loading wire:target="guardar" class="inline-flex items-center gap-2">
-                            <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                                <circle class="opacity-25" cx="12" cy="12" r="10"
-                                    stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z">
-                                </path>
-                            </svg>
-                            Guardando...
-                        </span>
-                    </button>
+                <div class="flex flex-col-reverse gap-3 border-t border-slate-200 pt-6 sm:flex-row sm:justify-end dark:border-zinc-800">
+                    <flux:button type="button" wire:click="limpiarFormulario" class="rounded-2xl border border-slate-300 px-5 py-3 text-sm font-black dark:border-zinc-700">Limpiar</flux:button>
+                    <flux:button variant="primary" type="submit" wire:loading.attr="disabled" class="rounded-2xl bg-[#006492] px-6 py-3 text-sm font-black text-white shadow-lg hover:bg-[#005477]">
+                        <span wire:loading.remove wire:target="guardar">Guardar credencial</span>
+                        <span wire:loading wire:target="guardar">Guardando...</span>
+                    </flux:button>
                 </div>
             </form>
         </div>
-    </div>
+    </section>
 </div>

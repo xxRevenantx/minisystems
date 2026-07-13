@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Credencial;
+use App\Models\HistorialExportacion;
+use App\Services\CreativeActivity;
+use Illuminate\Support\Facades\Schema;
 use App\Models\Reconocimiento;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -14,7 +17,7 @@ class PDFController extends Controller
     public function reconocimiento(Request $request, int $id)
     {
         abort_unless($request->user()?->puedeReconocimientos('descargar'), 403);
-        $reconocimiento = Reconocimiento::with(['reconocimientoImagen','directivos','evento','tipo'])->findOrFail($id);
+        $reconocimiento = Reconocimiento::with(['reconocimientoImagen','directivos','evento','tipo','marca','proyectoCreativo','registroValidacion'])->findOrFail($id);
         abort_if($reconocimiento->estado === 'cancelado', 422, 'El reconocimiento está cancelado.');
 
         $this->registrarGeneracion(collect([$reconocimiento]));
@@ -23,6 +26,7 @@ class PDFController extends Controller
             ->setPaper('letter', $orientacion)
             ->setOption(['fontDir'=>public_path('/fonts'),'fontCache'=>public_path('/fonts'),'defaultFont'=>'DejaVu Sans','isRemoteEnabled'=>true]);
 
+        $this->registrarExportacion('reconocimiento_individual', 'pdf', 1, $reconocimiento->marca_id, $reconocimiento->proyecto_creativo_id);
         $nombre = Str::slug($reconocimiento->reconocimiento_a, '_');
         return $pdf->stream("Reconocimiento_{$nombre}.pdf");
     }
@@ -38,6 +42,7 @@ class PDFController extends Controller
         $pdf = Pdf::loadView('livewire.reconocimientos.pdf.documentosPDF', compact('reconocimientos'))
             ->setPaper('letter', $orientacion)
             ->setOption(['fontDir'=>public_path('/fonts'),'fontCache'=>public_path('/fonts'),'defaultFont'=>'DejaVu Sans','isRemoteEnabled'=>true]);
+        $this->registrarExportacion('reconocimientos_lote', 'pdf', $reconocimientos->count());
         return $pdf->stream('Reconocimientos_'.now()->format('Ymd_His').'.pdf');
     }
 
@@ -64,6 +69,7 @@ class PDFController extends Controller
         }
         $zip->close();
         $this->registrarGeneracion($reconocimientos);
+        $this->registrarExportacion('reconocimientos_lote', 'zip/pdf', $reconocimientos->count());
         return response()->download($zipPath, 'Reconocimientos_'.now()->format('Ymd_His').'.zip')->deleteFileAfterSend(true);
     }
 
@@ -90,7 +96,7 @@ class PDFController extends Controller
 
     private function consultaReconocimientos(Request $request)
     {
-        $query=Reconocimiento::query()->with(['reconocimientoImagen','directivos','evento','tipo'])->where('estado','!=','cancelado');
+        $query=Reconocimiento::query()->with(['reconocimientoImagen','directivos','evento','tipo','marca','proyectoCreativo','registroValidacion'])->where('estado','!=','cancelado');
         if($request->filled('ids')){
             $ids=collect(explode(',',(string)$request->string('ids')))->filter(fn($id)=>ctype_digit((string)$id))->map(fn($id)=>(int)$id)->take(300);
             return $query->whereIn('id',$ids);
@@ -122,14 +128,42 @@ class PDFController extends Controller
 
     public function credencialPdf(Credencial $credencial)
     {
-        $pdf = Pdf::loadView('pdf.credencialIndividualPDF', ['credenciales'=>collect([$credencial])])->setPaper('letter','portrait');
-        return $pdf->stream('credencial_'.$credencial->matricula.'.pdf');
+        $credencial->load(['marca','proyectoCreativo','registroValidacion']);
+        $pdf = Pdf::loadView('pdf.credencialIndividualPDF', ['credenciales'=>collect([$credencial])])
+            ->setPaper('letter','portrait');
+        $this->registrarExportacion('credencial_individual', 'pdf', 1, $credencial->marca_id, $credencial->proyecto_creativo_id);
+        $name = Str::slug($credencial->folio ?: $credencial->matricula ?: $credencial->nombre, '_');
+        return $pdf->stream('credencial_'.$name.'.pdf');
     }
 
     public function credencialesPdfTodas()
     {
-        $credenciales=Credencial::query()->orderBy('nivel')->orderBy('licenciatura')->orderBy('grado')->orderBy('grupo')->orderBy('nombre')->get();
+        $credenciales=Credencial::with(['marca','proyectoCreativo','registroValidacion'])
+            ->orderBy('tipo')->orderBy('organizacion')->orderBy('nivel')->orderBy('nombre')->get();
         abort_if($credenciales->isEmpty(),404,'No hay credenciales registradas para descargar.');
-        return Pdf::loadView('pdf.credencialTodasPDF',compact('credenciales'))->setPaper('letter','portrait')->stream('todas_las_credenciales.pdf');
+        $this->registrarExportacion('credenciales_lote', 'pdf', $credenciales->count());
+        return Pdf::loadView('pdf.credencialTodasPDF',compact('credenciales'))
+            ->setPaper('letter','portrait')->stream('todas_las_credenciales.pdf');
+    }
+
+    private function registrarExportacion(string $tipo, string $formato, int $cantidad, ?int $marcaId = null, ?int $proyectoId = null): void
+    {
+        try {
+            if (! Schema::hasTable('historial_exportaciones')) {
+                return;
+            }
+
+            $record = HistorialExportacion::create([
+                'user_id' => auth()->id(),
+                'marca_id' => $marcaId,
+                'proyecto_creativo_id' => $proyectoId,
+                'tipo' => $tipo,
+                'formato' => $formato,
+                'cantidad' => max(1, $cantidad),
+            ]);
+            CreativeActivity::log('exportaciones', 'generar', $record, $tipo, ['cantidad' => $cantidad, 'formato' => $formato]);
+        } catch (\Throwable) {
+            // No interrumpe la descarga si el historial todavía no está migrado.
+        }
     }
 }

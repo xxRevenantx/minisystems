@@ -166,6 +166,31 @@
             width: 65px;
             opacity: .9;
         }
+
+        .validacion {
+            position: absolute;
+            left: 4%;
+            bottom: 3%;
+            width: 205px;
+            min-height: 54px;
+            padding-left: 60px;
+            font-size: 8px;
+            line-height: 1.35;
+            color: #475569;
+        }
+
+        .validacion img {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 52px;
+            height: 52px;
+        }
+
+        .validacion strong {
+            color: #006492;
+            font-size: 9px;
+        }
     </style>
 </head>
 
@@ -238,7 +263,7 @@
             </div>
 
             <div class="bloque fecha" style="top: {{ $fechaTop }}px; font-size: 15px; margin-left: 500px;">
-                Cd. Altamirano, Gro.,{{ $reconocimiento->fecha?->translatedFormat('d \d\e F \d\e Y') }}
+                @if($reconocimiento->evento?->lugar){{ $reconocimiento->evento->lugar }}, @endif{{ $reconocimiento->fecha?->translatedFormat('d \d\e F \d\e Y') }}
             </div>
 
             @if ($dirs->isNotEmpty())
@@ -314,6 +339,18 @@
             @if ($sello)
                 <img class="sello" src="{{ public_path('storage/sellosDirectivos/' . $sello->sello) }}"
                     alt="">
+            @endif
+
+            @if($reconocimiento->registroValidacion)
+                @php
+                    $validationUrl = route('validacion.publica', $reconocimiento->registroValidacion->codigo);
+                    $validationQr = app(\App\Services\QrCodeService::class)->dataUri($validationUrl, 170, 1);
+                @endphp
+                <div class="validacion">
+                    @if($validationQr)<img src="{{ $validationQr }}" alt="QR de validación">@endif
+                    VALIDACIÓN PÚBLICA<br><strong>{{ $reconocimiento->registroValidacion->codigo }}</strong><br>
+                    Escanea para verificar autenticidad.
+                </div>
             @endif
         </div>
     @endforeach
