@@ -68,6 +68,18 @@ class User extends Authenticatable
                 'cancelar' => $esAdministradorPrincipal,
                 'administrar' => $esAdministradorPrincipal,
             ]);
+
+            if (\Illuminate\Support\Facades\Schema::hasTable('etiqueta_permisos')) {
+                $user->permisoEtiquetas()->create([
+                    'ver' => true,
+                    'crear' => $esAdministradorPrincipal,
+                    'editar' => $esAdministradorPrincipal,
+                    'eliminar' => $esAdministradorPrincipal,
+                    'importar' => $esAdministradorPrincipal,
+                    'descargar' => true,
+                    'administrar' => $esAdministradorPrincipal,
+                ]);
+            }
         });
     }
 
@@ -88,6 +100,29 @@ class User extends Authenticatable
         $permiso = $this->relationLoaded('permisoReconocimientos')
             ? $this->permisoReconocimientos
             : $this->permisoReconocimientos()->first();
+
+        return $permiso ? (bool) ($permiso->{$accion} ?? false) : false;
+    }
+
+
+    public function permisoEtiquetas()
+    {
+        return $this->hasOne(EtiquetaPermiso::class);
+    }
+
+    public function puedeEtiquetas(string $accion): bool
+    {
+        if (! \Illuminate\Support\Facades\Schema::hasTable('etiqueta_permisos')) {
+            return false;
+        }
+
+        if ((int) $this->getKey() === 1) {
+            return true;
+        }
+
+        $permiso = $this->relationLoaded('permisoEtiquetas')
+            ? $this->permisoEtiquetas
+            : $this->permisoEtiquetas()->first();
 
         return $permiso ? (bool) ($permiso->{$accion} ?? false) : false;
     }

@@ -12,6 +12,9 @@ use App\Http\Controllers\PDFController;
 use App\Http\Controllers\ReconocimientoController;
 use App\Http\Controllers\CreativeCsvController;
 use App\Http\Controllers\ValidationController;
+use App\Http\Controllers\EtiquetaController;
+use App\Http\Controllers\EtiquetaExcelController;
+use App\Http\Controllers\EtiquetaPdfController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -51,6 +54,13 @@ Route::middleware(['auth'])->group(function () {
 
     //CREDENCIAL
     Route::get('credenciales', [CredencialController::class, 'index'])->name('credencial');
+
+
+    // ETIQUETAS
+    Route::get('etiquetas', [EtiquetaController::class, 'index'])->name('etiquetas');
+    Route::get('etiquetas/excel/plantilla', [EtiquetaExcelController::class, 'plantilla'])->name('etiquetas.excel.plantilla');
+    Route::get('etiquetas/excel/exportar', [EtiquetaExcelController::class, 'exportar'])->name('etiquetas.excel.exportar');
+    Route::post('etiquetas/pdf', [EtiquetaPdfController::class, 'generar'])->name('etiquetas.pdf');
 
     // RECONOCIMIENTO EDITAR
     Route::get('reconocimiento/editar/{id}', [ReconocimientoController::class, 'editar'])->name('reconocimiento.editar');

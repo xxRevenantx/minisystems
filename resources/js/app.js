@@ -326,3 +326,53 @@ window.miniSystemsTinyMce = ({
         }
     },
 });
+
+/** Confirmaciones de acciones sensibles del módulo Etiquetas. */
+window.etiquetasModule = () => ({
+    confirmarEliminarAlumno(id, nombre) {
+        this.confirmar({
+            title: '¿Enviar a la papelera?',
+            text: `El registro de “${nombre}” podrá restaurarse después.`,
+            confirmButtonText: 'Sí, eliminar',
+        }, () => this.$wire.call('eliminarAlumno', id));
+    },
+    confirmarEliminarPlantilla(id, nombre) {
+        this.confirmar({
+            title: '¿Eliminar esta plantilla?',
+            text: `El fondo “${nombre}” dejará de estar disponible para nuevos PDF.`,
+            confirmButtonText: 'Sí, eliminar',
+        }, () => this.$wire.call('eliminarPlantilla', id));
+    },
+    confirmarMasivo(accion, cantidad) {
+        this.confirmar({
+            title: '¿Eliminar los seleccionados?',
+            text: `${cantidad} registro(s) serán enviados a la papelera.`,
+            confirmButtonText: 'Sí, continuar',
+        }, () => this.$wire.call('accionMasiva', accion));
+    },
+    confirmarDefinitivo(id, nombre) {
+        this.confirmar({
+            title: 'Eliminación definitiva',
+            text: `“${nombre}” no podrá recuperarse.`,
+            confirmButtonText: 'Eliminar definitivamente',
+        }, () => this.$wire.call('eliminarDefinitivamente', id));
+    },
+    confirmar(options, callback) {
+        if (!window.Swal) {
+            if (window.confirm(options.text)) callback();
+            return;
+        }
+        window.Swal.fire({
+            icon: 'warning',
+            showCancelButton: true,
+            reverseButtons: true,
+            focusCancel: true,
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#52525b',
+            ...options,
+        }).then((result) => {
+            if (result.isConfirmed) callback();
+        });
+    },
+});

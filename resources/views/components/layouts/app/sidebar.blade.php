@@ -136,6 +136,12 @@
                         :current="request()->routeIs('credencial')" wire:navigate>{{ __('Credenciales') }}
                     </flux:navlist.item>
 
+                    @if(auth()->user()?->puedeEtiquetas('ver'))
+                        <flux:navlist.item icon="tag" :href="route('etiquetas')"
+                            :current="request()->routeIs('etiquetas*')" wire:navigate>{{ __('Etiquetas') }}
+                        </flux:navlist.item>
+                    @endif
+
                 </flux:navlist>
 
             </flux:navlist.group>
