@@ -25,6 +25,12 @@
             src: url('<?php echo e(storage_path('fonts/calibri-bold.ttf')); ?>') format('truetype');
         }
 
+        @font-face {
+            font-family: 'greatVibes';
+            font-style: normal;
+            src: url('<?php echo e(storage_path('fonts/greatVibes-Regular.ttf')); ?>') format('truetype');
+        }
+
         * {
             box-sizing: border-box;
         }
@@ -104,6 +110,11 @@
         .nombre.abajo-de-datos {
             margin-top: .18cm;
         }
+
+        .mesa {
+            font-size: 150px;
+            font-family: 'greatVibes', cursive;
+        }
     </style>
 </head>
 
@@ -151,6 +162,9 @@
 
                 <div class="bloque <?php echo e($esPrimerAlumno ? 'superior' : 'inferior'); ?>">
                     <div class="contenido <?php echo e($debeRotarBloque ? 'rotado-180' : ''); ?>">
+                        <div class="mesa">
+                            Mesa
+                        </div>
                         <div class="nombre" style="font-size: <?php echo e($tamanoNombre); ?>px;">
                             <?php echo e($nombre); ?>
 

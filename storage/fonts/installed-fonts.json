@@ -6,5 +6,9 @@
     "calibri": {
         "normal": "C:\\laragon\\www\\minisystems\\storage\\fonts\/calibri_normal_d469cb44b3c49cb5e22815baa6924887",
         "bold": "calibri_bold_df272884b2089f4756fb7a6ad31414a9"
+    },
+    "greatvibes": {
+        "bold": "C:\\laragon\\www\\minisystems\\storage\\fonts\/greatvibes_bold_ae592ad1864a42a9332428a1e47a4d8e",
+        "normal": "greatvibes_normal_ae592ad1864a42a9332428a1e47a4d8e"
     }
 }
