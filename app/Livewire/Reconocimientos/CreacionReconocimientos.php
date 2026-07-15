@@ -93,14 +93,14 @@ class CreacionReconocimientos extends Component
     {
         if ($this->proyecto_creativo_id && ! ProyectoCreativo::query()
             ->whereKey($this->proyecto_creativo_id)
-            ->when($value, fn ($query) => $query->where('marca_id', $value))
+            ->when($value, fn($query) => $query->where('marca_id', $value))
             ->exists()) {
             $this->proyecto_creativo_id = null;
         }
 
         if ($this->persona_id && ! Persona::query()
             ->whereKey($this->persona_id)
-            ->when($value, fn ($query) => $query->where('marca_id', $value))
+            ->when($value, fn($query) => $query->where('marca_id', $value))
             ->exists()) {
             $this->persona_id = null;
         }
@@ -130,7 +130,10 @@ class CreacionReconocimientos extends Component
         if (!$value || !($tipo = ReconocimientoTipo::find($value)))
             return;
         $this->descripcion = $tipo->descripcion;
-        $this->reconocimiento_imagen_id = $tipo->reconocimiento_imagen_id ?: $this->reconocimiento_imagen_id;
+        if ($tipo->reconocimiento_imagen_id) {
+            $this->reconocimiento_imagen_id = (int) $tipo->reconocimiento_imagen_id;
+            $this->resetValidation('reconocimiento_imagen_id');
+        }
         if (!$tipo->usa_lugar)
             $this->lugar_obtenido = null;
         $this->dispatch('reconocimiento-descripcion-actualizada', html: $this->descripcion);
@@ -144,7 +147,27 @@ class CreacionReconocimientos extends Component
         $this->reconocimiento_tipo_id = $evento->reconocimiento_tipo_id ?: $this->reconocimiento_tipo_id;
         if ($evento->reconocimiento_tipo_id)
             $this->updatedReconocimientoTipoId($evento->reconocimiento_tipo_id);
-        $this->reconocimiento_imagen_id = $evento->reconocimiento_imagen_id ?: $this->reconocimiento_imagen_id;
+        if ($evento->reconocimiento_imagen_id) {
+            $this->reconocimiento_imagen_id = (int) $evento->reconocimiento_imagen_id;
+            $this->resetValidation('reconocimiento_imagen_id');
+        }
+    }
+
+    public function seleccionarPlantilla(int $plantillaId): void
+    {
+        $plantilla = ReconocimientoImagen::query()
+            ->whereKey($plantillaId)
+            ->where('activo', true)
+            ->first();
+
+        if (! $plantilla) {
+            $this->reconocimiento_imagen_id = null;
+            $this->addError('reconocimiento_imagen_id', 'La plantilla seleccionada ya no está disponible.');
+            return;
+        }
+
+        $this->reconocimiento_imagen_id = (int) $plantilla->id;
+        $this->resetValidation('reconocimiento_imagen_id');
     }
 
     public function limpiarSeleccion(): void
@@ -197,7 +220,7 @@ class CreacionReconocimientos extends Component
     private function nuevoCodigoValidacion(): string
     {
         do {
-            $codigo = strtoupper(Str::random(4).'-'.Str::random(4).'-'.Str::random(4));
+            $codigo = strtoupper(Str::random(4) . '-' . Str::random(4) . '-' . Str::random(4));
         } while (RegistroValidacion::where('codigo', $codigo)->exists());
 
         return $codigo;
@@ -205,6 +228,10 @@ class CreacionReconocimientos extends Component
 
     public function guardarReconocimiento(): void
     {
+        if ($this->reconocimiento_imagen_id !== null) {
+            $this->reconocimiento_imagen_id = (int) $this->reconocimiento_imagen_id;
+        }
+
         $this->validate();
         $descripcion = ReconocimientoHtml::limpiar($this->descripcion);
         $destinatarios = $this->modo === 'masivo'
@@ -224,7 +251,7 @@ class CreacionReconocimientos extends Component
                         'proyecto_creativo_id' => $this->proyecto_creativo_id,
                         'codigo' => $this->nuevoCodigoValidacion(),
                         'tipo' => 'reconocimiento',
-                        'titulo' => 'Reconocimiento de '.$nombreDestinatario,
+                        'titulo' => 'Reconocimiento de ' . $nombreDestinatario,
                         'estado' => 'valido',
                         'emitido_at' => $this->fecha,
                         'datos_publicos' => [
@@ -301,10 +328,10 @@ class CreacionReconocimientos extends Component
             ? Marca::query()->where('activo', true)->orderBy('nombre')->get()
             : collect();
         $proyectosCreativos = Schema::hasTable('proyectos_creativos')
-            ? ProyectoCreativo::query()->when($this->marca_id, fn ($query) => $query->where('marca_id', $this->marca_id))->orderByDesc('created_at')->get()
+            ? ProyectoCreativo::query()->when($this->marca_id, fn($query) => $query->where('marca_id', $this->marca_id))->orderByDesc('created_at')->get()
             : collect();
         $personas = Schema::hasTable('personas')
-            ? Persona::query()->where('activo', true)->when($this->marca_id, fn ($query) => $query->where('marca_id', $this->marca_id))->orderBy('nombre')->limit(300)->get()
+            ? Persona::query()->where('activo', true)->when($this->marca_id, fn($query) => $query->where('marca_id', $this->marca_id))->orderBy('nombre')->limit(300)->get()
             : collect();
 
         return view('livewire.reconocimientos.creacion-reconocimientos', [

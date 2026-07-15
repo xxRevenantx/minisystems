@@ -12,14 +12,14 @@
         @font-face {
             font-family: 'raleway';
             font-style: normal;
-            src: url('{{ storage_path('fonts/raleway-regular.ttf') }}') format('truetype');
+            src: url('<?php echo e(storage_path('fonts/raleway-regular.ttf')); ?>') format('truetype');
         }
 
         @font-face {
             font-family: 'raleway';
             font-style: normal;
             font-weight: 700;
-            src: url('{{ storage_path('fonts/raleway-bold.ttf') }}') format('truetype');
+            src: url('<?php echo e(storage_path('fonts/raleway-bold.ttf')); ?>') format('truetype');
         }
 
         body {
@@ -195,8 +195,8 @@
 </head>
 
 <body>
-    @foreach ($reconocimientos as $reconocimiento)
-        @php
+    <?php $__currentLoopData = $reconocimientos; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $reconocimiento): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+        <?php
             $img = $reconocimiento->reconocimientoImagen;
             $cfg = $img?->configuracion ?? [];
 
@@ -230,132 +230,131 @@
              * suficiente a las dos filas.
              */
             $inicioFirmas = $directivosSegundaFila->isNotEmpty() ? $firmasTop - 42 : $firmasTop;
-        @endphp
+        ?>
 
         <div class="pagina">
-            @if ($img?->imagen)
-                <img class="fondo" src="{{ public_path('storage/imagenesReconocimientos/' . $img->imagen) }}"
+            <?php if($img?->imagen): ?>
+                <img class="fondo" src="<?php echo e(public_path('storage/imagenesReconocimientos/' . $img->imagen)); ?>"
                     alt="">
-            @endif
+            <?php endif; ?>
 
-            @if ($reconocimiento->estado === 'cancelado')
+            <?php if($reconocimiento->estado === 'cancelado'): ?>
                 <div class="cancelado">
                     CANCELADO
                 </div>
-            @endif
+            <?php endif; ?>
 
-            <div class="bloque nombre" style="top: {{ $nombreTop }}px; font-size:50px;">
-                {{ $reconocimiento->reconocimiento_a }}
+            <div class="bloque nombre" style="top: <?php echo e($nombreTop); ?>px; font-size:50px;">
+                <?php echo e($reconocimiento->reconocimiento_a); ?>
+
             </div>
 
-            <div class="bloque descripcion" style="top: {{ $descTop }}px; font-size: {{ $descTam }}px;">
-                @if ($reconocimiento->evento)
+            <div class="bloque descripcion" style="top: <?php echo e($descTop); ?>px; font-size: <?php echo e($descTam); ?>px;">
+                <?php if($reconocimiento->evento): ?>
                     <div class="evento">
-                        {{ $reconocimiento->evento->nombre }}
+                        <?php echo e($reconocimiento->evento->nombre); ?>
 
-                        @if ($reconocimiento->evento->lugar)
-                            · {{ $reconocimiento->evento->lugar }}
-                        @endif
+
+                        <?php if($reconocimiento->evento->lugar): ?>
+                            · <?php echo e($reconocimiento->evento->lugar); ?>
+
+                        <?php endif; ?>
                     </div>
-                @endif
+                <?php endif; ?>
 
-                {!! \App\Support\ReconocimientoHtml::limpiar($reconocimiento->descripcion) !!}
+                <?php echo \App\Support\ReconocimientoHtml::limpiar($reconocimiento->descripcion); ?>
+
             </div>
 
-            <div class="bloque fecha" style="top: {{ $fechaTop }}px; font-size: 15px; margin-left: 500px;">
-                @if ($reconocimiento->evento?->lugar)
-                    {{ $reconocimiento->evento->lugar }},
-                @endif{{ $reconocimiento->fecha?->translatedFormat('d \d\e F \d\e Y') }}
+            <div class="bloque fecha" style="top: <?php echo e($fechaTop); ?>px; font-size: 15px; margin-left: 500px;">
+                <?php if($reconocimiento->evento?->lugar): ?>
+                    <?php echo e($reconocimiento->evento->lugar); ?>,
+                <?php endif; ?><?php echo e($reconocimiento->fecha?->translatedFormat('d \d\e F \d\e Y')); ?>
+
             </div>
 
-            @if ($dirs->isNotEmpty())
-                <div class="firmas" style="top: {{ $inicioFirmas }}px;">
-                    {{-- Primera fila: Rector y Directora General --}}
-                    @if ($directivosPrimeraFila->isNotEmpty())
+            <?php if($dirs->isNotEmpty()): ?>
+                <div class="firmas" style="top: <?php echo e($inicioFirmas); ?>px;">
+                    
+                    <?php if($directivosPrimeraFila->isNotEmpty()): ?>
                         <table class="tabla-firmas">
                             <tr>
-                                @foreach ($directivosPrimeraFila as $directivo)
+                                <?php $__currentLoopData = $directivosPrimeraFila; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $directivo): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <td class="firma">
-                                        @if ($directivo->firma)
+                                        <?php if($directivo->firma): ?>
                                             <img class="firma-img"
-                                                src="{{ public_path('storage/firmasDirectivos/' . $directivo->firma) }}"
+                                                src="<?php echo e(public_path('storage/firmasDirectivos/' . $directivo->firma)); ?>"
                                                 alt="">
-                                        @else
+                                        <?php else: ?>
                                             <div class="espacio-firma"></div>
-                                        @endif
+                                        <?php endif; ?>
 
                                         <div class="linea">
                                             <div class="nombre-firmante">
                                                 <strong>
-                                                    {{ $directivo->nombre_completo }}
+                                                    <?php echo e($directivo->nombre_completo); ?>
+
                                                 </strong>
                                             </div>
 
                                             <div class="cargo">
-                                                {{ $directivo->cargo }}
+                                                <?php echo e($directivo->cargo); ?>
+
                                             </div>
                                         </div>
                                     </td>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </tr>
                         </table>
-                    @endif
+                    <?php endif; ?>
 
-                    {{-- Segunda fila: Directora de Primaria y Secundaria y Subdirector --}}
-                    @if ($directivosSegundaFila->isNotEmpty())
+                    
+                    <?php if($directivosSegundaFila->isNotEmpty()): ?>
                         <table class="tabla-firmas">
                             <tr>
-                                @foreach ($directivosSegundaFila as $directivo)
+                                <?php $__currentLoopData = $directivosSegundaFila; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $directivo): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <td class="firma">
-                                        @if ($directivo->firma)
+                                        <?php if($directivo->firma): ?>
                                             <img class="firma-img"
-                                                src="{{ public_path('storage/firmasDirectivos/' . $directivo->firma) }}"
+                                                src="<?php echo e(public_path('storage/firmasDirectivos/' . $directivo->firma)); ?>"
                                                 alt="">
-                                        @else
+                                        <?php else: ?>
                                             <div class="espacio-firma"></div>
-                                        @endif
+                                        <?php endif; ?>
 
                                         <div class="linea">
                                             <div class="nombre-firmante">
                                                 <strong>
-                                                    {{ $directivo->nombre_completo }}
+                                                    <?php echo e($directivo->nombre_completo); ?>
+
                                                 </strong>
                                             </div>
 
                                             <div class="cargo">
-                                                {{ $directivo->cargo }}
+                                                <?php echo e($directivo->cargo); ?>
+
                                             </div>
                                         </div>
                                     </td>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </tr>
                         </table>
-                    @endif
+                    <?php endif; ?>
                 </div>
-            @endif
+            <?php endif; ?>
 
-            @php
+            <?php
                 $sello = $dirs->first(fn($directivo) => !empty($directivo->sello));
-            @endphp
+            ?>
 
-            @if ($sello)
-                <img class="sello" src="{{ public_path('storage/sellosDirectivos/' . $sello->sello) }}"
+            <?php if($sello): ?>
+                <img class="sello" src="<?php echo e(public_path('storage/sellosDirectivos/' . $sello->sello)); ?>"
                     alt="">
-            @endif
-            {{--
-            @if ($reconocimiento->registroValidacion)
-                @php
-                    $validationUrl = route('validacion.publica', $reconocimiento->registroValidacion->codigo);
-                    $validationQr = app(\App\Services\QrCodeService::class)->dataUri($validationUrl, 170, 1);
-                @endphp
-                <div class="validacion">
-                    @if ($validationQr)<img src="{{ $validationQr }}" alt="QR de validación">@endif
-                    VALIDACIÓN PÚBLICA<br><strong>{{ $reconocimiento->registroValidacion->codigo }}</strong><br>
-                    Escanea para verificar autenticidad.
-                </div>
-            @endif --}}
+            <?php endif; ?>
+            
         </div>
-    @endforeach
+    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 </body>
 
 </html>
+<?php /**PATH C:\laragon\www\minisystems\resources\views/livewire/reconocimientos/pdf/documentosPDF.blade.php ENDPATH**/ ?>
