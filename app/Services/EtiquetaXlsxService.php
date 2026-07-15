@@ -14,13 +14,13 @@ class EtiquetaXlsxService
         $filas = [
             self::HEADERS,
             ['MARÍA PÉREZ LÓPEZ', 'Primaria', '2023-2029', '3°', 'A', 'activo'],
-            ['JUAN HERNÁNDEZ CRUZ', 'Curso', '2026', '', '', 'activo'],
+            ['ANA RAMÍREZ DÍAZ', 'Personal', '', '', '', 'activo'],
         ];
 
         $catalogos = [
             ['NIVELES DISPONIBLES', 'ESTADOS', 'INSTRUCCIONES'],
-            ['Preescolar', 'activo', 'Nombre, nivel y generación son obligatorios.'],
-            ['Primaria', 'inactivo', 'Grado y grupo son opcionales.'],
+            ['Preescolar', 'activo', 'Nombre y nivel son obligatorios. Generación no es obligatoria para Personal y Otro.'],
+            ['Primaria', 'inactivo', 'Para Personal y Otro, generación, grado y grupo no se imprimen en el PDF.'],
             ['Secundaria', '', 'No cambies los encabezados de la primera fila.'],
             ['Bachillerato', '', 'Los duplicados se omiten usando nombre, nivel, generación, grado y grupo.'],
             ['Licenciatura', '', 'Puedes agregar tantos registros como necesites.'],

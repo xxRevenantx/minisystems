@@ -1791,16 +1791,16 @@ if (isset($__messageOriginal)) { $message = $__messageOriginal; }
 endif;
 unset($__errorArgs, $__bag); ?><!--[if ENDBLOCK]><![endif]-->
                         </label>
-                        <label class="text-sm font-bold">Nivel *<?php if (isset($component)) { $__componentOriginala467913f9ff34913553be64599ec6e92 = $component; } ?>
+                        <label class="text-sm font-bold <?php echo e(in_array($nivel, ['Personal', 'Otro'], true) ? 'md:col-span-2' : ''); ?>">Nivel *<?php if (isset($component)) { $__componentOriginala467913f9ff34913553be64599ec6e92 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginala467913f9ff34913553be64599ec6e92 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'e60dd9d2c3a62d619c9acb38f20d5aa5::select.index','data' => ['wire:model' => 'nivel','class' => 'mt-1 w-full rounded-2xl']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'e60dd9d2c3a62d619c9acb38f20d5aa5::select.index','data' => ['wire:model.live' => 'nivel','class' => 'mt-1 w-full rounded-2xl']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('flux::select'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['wire:model' => 'nivel','class' => 'mt-1 w-full rounded-2xl']); ?>
+<?php $component->withAttributes(['wire:model.live' => 'nivel','class' => 'mt-1 w-full rounded-2xl']); ?>
                                 <?php if (isset($component)) { $__componentOriginalc7395a5f1f6c2e275d1dc4ea0be0c745 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginalc7395a5f1f6c2e275d1dc4ea0be0c745 = $attributes; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'e60dd9d2c3a62d619c9acb38f20d5aa5::select.option.index','data' => ['value' => '']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
@@ -1864,8 +1864,15 @@ if (isset($__messageOriginal)) { $message = $__messageOriginal; }
 endif;
 unset($__errorArgs, $__bag); ?><!--[if ENDBLOCK]><![endif]-->
                         </label>
-                        <label class="text-sm font-bold">Generación *
-                            <?php if (isset($component)) { $__componentOriginal26c546557cdc09040c8dd00b2090afd0 = $component; } ?>
+                        <!--[if BLOCK]><![endif]--><?php if(in_array($nivel, ['Personal', 'Otro'], true)): ?>
+                            <div
+                                class="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm text-emerald-800 md:col-span-2 dark:border-emerald-900 dark:bg-emerald-950/20 dark:text-emerald-200">
+                                Para el nivel <strong><?php echo e($nivel); ?></strong>, generación, licenciatura o grado y grupo
+                                son opcionales y no se mostrarán en el PDF.
+                            </div>
+                        <?php else: ?>
+                            <label class="text-sm font-bold">Generación *
+                                <?php if (isset($component)) { $__componentOriginal26c546557cdc09040c8dd00b2090afd0 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal26c546557cdc09040c8dd00b2090afd0 = $attributes; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'e60dd9d2c3a62d619c9acb38f20d5aa5::input.index','data' => ['wire:model' => 'generacion','class' => 'mt-1 w-full rounded-2xl','placeholder' => '2023-2026']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('flux::input'); ?>
@@ -1885,28 +1892,30 @@ unset($__errorArgs, $__bag); ?><!--[if ENDBLOCK]><![endif]-->
 <?php $component = $__componentOriginal26c546557cdc09040c8dd00b2090afd0; ?>
 <?php unset($__componentOriginal26c546557cdc09040c8dd00b2090afd0); ?>
 <?php endif; ?>
-                            <!--[if BLOCK]><![endif]--><?php $__errorArgs = ['generacion'];
+                                <!--[if BLOCK]><![endif]--><?php $__errorArgs = ['generacion'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
 if (isset($message)) { $__messageOriginal = $message; }
 $message = $__bag->first($__errorArgs[0]); ?>
-                                <span class="text-xs text-red-600"><?php echo e($message); ?></span>
-                            <?php unset($message);
+                                    <span class="text-xs text-red-600"><?php echo e($message); ?></span>
+                                <?php unset($message);
 if (isset($__messageOriginal)) { $message = $__messageOriginal; }
 endif;
 unset($__errorArgs, $__bag); ?><!--[if ENDBLOCK]><![endif]-->
-                        </label>
-                        <label class="text-sm font-bold">Grado (opcional)
-                            <?php if (isset($component)) { $__componentOriginal26c546557cdc09040c8dd00b2090afd0 = $component; } ?>
+                            </label>
+                            <label class="text-sm font-bold">
+                                <?php echo e($nivel === 'Licenciatura' ? 'Licenciatura (opcional)' : 'Grado (opcional)'); ?>
+
+                                <?php if (isset($component)) { $__componentOriginal26c546557cdc09040c8dd00b2090afd0 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal26c546557cdc09040c8dd00b2090afd0 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'e60dd9d2c3a62d619c9acb38f20d5aa5::input.index','data' => ['wire:model' => 'grado','class' => 'mt-1 w-full rounded-2xl','placeholder' => '3°']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'e60dd9d2c3a62d619c9acb38f20d5aa5::input.index','data' => ['wire:model' => 'grado','class' => 'mt-1 w-full rounded-2xl','placeholder' => ''.e($nivel === 'Licenciatura' ? 'Lic. en Administración' : '3°').'']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('flux::input'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['wire:model' => 'grado','class' => 'mt-1 w-full rounded-2xl','placeholder' => '3°']); ?>
+<?php $component->withAttributes(['wire:model' => 'grado','class' => 'mt-1 w-full rounded-2xl','placeholder' => ''.e($nivel === 'Licenciatura' ? 'Lic. en Administración' : '3°').'']); ?>
 <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginal26c546557cdc09040c8dd00b2090afd0)): ?>
@@ -1917,19 +1926,19 @@ unset($__errorArgs, $__bag); ?><!--[if ENDBLOCK]><![endif]-->
 <?php $component = $__componentOriginal26c546557cdc09040c8dd00b2090afd0; ?>
 <?php unset($__componentOriginal26c546557cdc09040c8dd00b2090afd0); ?>
 <?php endif; ?>
-                            <!--[if BLOCK]><![endif]--><?php $__errorArgs = ['grado'];
+                                <!--[if BLOCK]><![endif]--><?php $__errorArgs = ['grado'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
 if (isset($message)) { $__messageOriginal = $message; }
 $message = $__bag->first($__errorArgs[0]); ?>
-                                <span class="text-xs text-red-600"><?php echo e($message); ?></span>
-                            <?php unset($message);
+                                    <span class="text-xs text-red-600"><?php echo e($message); ?></span>
+                                <?php unset($message);
 if (isset($__messageOriginal)) { $message = $__messageOriginal; }
 endif;
 unset($__errorArgs, $__bag); ?><!--[if ENDBLOCK]><![endif]-->
-                        </label>
-                        <label class="text-sm font-bold">Grupo (opcional)
-                            <?php if (isset($component)) { $__componentOriginal26c546557cdc09040c8dd00b2090afd0 = $component; } ?>
+                            </label>
+                            <label class="text-sm font-bold">Grupo (opcional)
+                                <?php if (isset($component)) { $__componentOriginal26c546557cdc09040c8dd00b2090afd0 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal26c546557cdc09040c8dd00b2090afd0 = $attributes; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'e60dd9d2c3a62d619c9acb38f20d5aa5::input.index','data' => ['wire:model' => 'grupo','class' => 'mt-1 w-full rounded-2xl uppercase','placeholder' => 'A']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('flux::input'); ?>
@@ -1949,17 +1958,18 @@ unset($__errorArgs, $__bag); ?><!--[if ENDBLOCK]><![endif]-->
 <?php $component = $__componentOriginal26c546557cdc09040c8dd00b2090afd0; ?>
 <?php unset($__componentOriginal26c546557cdc09040c8dd00b2090afd0); ?>
 <?php endif; ?>
-                            <!--[if BLOCK]><![endif]--><?php $__errorArgs = ['grupo'];
+                                <!--[if BLOCK]><![endif]--><?php $__errorArgs = ['grupo'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
 if (isset($message)) { $__messageOriginal = $message; }
 $message = $__bag->first($__errorArgs[0]); ?>
-                                <span class="text-xs text-red-600"><?php echo e($message); ?></span>
-                            <?php unset($message);
+                                    <span class="text-xs text-red-600"><?php echo e($message); ?></span>
+                                <?php unset($message);
 if (isset($__messageOriginal)) { $message = $__messageOriginal; }
 endif;
 unset($__errorArgs, $__bag); ?><!--[if ENDBLOCK]><![endif]-->
-                        </label>
+                            </label>
+                        <?php endif; ?><!--[if ENDBLOCK]><![endif]-->
                     </div>
                     <label
                         class="flex items-center justify-between rounded-2xl border border-slate-200 p-4 dark:border-zinc-800"><span><strong

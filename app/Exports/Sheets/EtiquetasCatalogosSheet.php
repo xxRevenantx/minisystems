@@ -24,11 +24,11 @@ class EtiquetasCatalogosSheet implements FromArray, WithEvents, WithStyles, With
     public function array(): array
     {
         $instrucciones = [
-            'Nombre(s), nivel y generación son obligatorios; los apellidos pueden quedar vacíos.',
+            'Nombre(s) y nivel son obligatorios. La generación es obligatoria excepto para Personal y Otro.',
             'Captura por separado nombre, apellido paterno y apellido materno. La etiqueta mostrará primero el nombre.',
             'Para crear un registro nuevo deja la columna id vacía.',
             'Para actualizar registros descarga un Excel editable y conserva el id de cada fila.',
-            'Grado y grupo son opcionales.',
+            'Para Personal y Otro, generación, licenciatura o grado y grupo pueden quedar vacíos y no se imprimen en el PDF.',
             'No cambies los encabezados de la hoja Alumnos.',
             'Los duplicados se omiten usando nombre, apellidos, nivel, generación, grado y grupo.',
             'El estado vacío se interpreta como activo.',

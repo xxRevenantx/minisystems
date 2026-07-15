@@ -25,7 +25,7 @@ class EtiquetasPlantillaAlumnosSheet implements FromArray, WithEvents, WithStyle
         return [
             ['id', 'nombre', 'apellido_paterno', 'apellido_materno', 'nivel', 'generacion', 'grado', 'grupo', 'estado'],
             ['', 'MARÍA FERNANDA', 'PÉREZ', 'LÓPEZ', 'Primaria', '2023-2029', '3°', 'A', 'activo'],
-            ['', 'JUAN CARLOS', 'HERNÁNDEZ', 'CRUZ', 'Curso', '2026', '', '', 'activo'],
+            ['', 'ANA SOFÍA', 'RAMÍREZ', 'DÍAZ', 'Personal', '', '', '', 'activo'],
         ];
     }
 

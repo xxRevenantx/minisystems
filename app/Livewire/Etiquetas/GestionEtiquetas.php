@@ -126,7 +126,12 @@ class GestionEtiquetas extends Component
             'apellidoPaterno' => ['nullable', 'string', 'max:255'],
             'apellidoMaterno' => ['nullable', 'string', 'max:255'],
             'nivel' => ['required', Rule::in($this->niveles)],
-            'generacion' => ['required', 'string', 'max:100'],
+            'generacion' => [
+                Rule::requiredIf(fn () => ! $this->esNivelSinDatosAcademicos()),
+                'nullable',
+                'string',
+                'max:100',
+            ],
             'grado' => ['nullable', 'string', 'max:50'],
             'grupo' => ['nullable', 'string', 'max:50'],
             'activo' => ['boolean'],
@@ -172,6 +177,18 @@ class GestionEtiquetas extends Component
         }
     }
 
+    public function updatedNivel($value): void
+    {
+        if ($this->esNivelSinDatosAcademicos(is_string($value) ? $value : null)) {
+            $this->generacion = '';
+            $this->grado = null;
+            $this->grupo = null;
+            $this->resetValidation('generacion');
+            $this->resetValidation('grado');
+            $this->resetValidation('grupo');
+        }
+    }
+
     public function updatedPersonaId($value): void
     {
         if ($value && ($persona = Persona::find($value))) {
@@ -198,7 +215,7 @@ class GestionEtiquetas extends Component
         $this->apellidoPaterno = $alumno->apellido_paterno ?? '';
         $this->apellidoMaterno = $alumno->apellido_materno ?? '';
         $this->nivel = $alumno->nivel;
-        $this->generacion = $alumno->generacion;
+        $this->generacion = $alumno->generacion ?? '';
         $this->grado = $alumno->grado;
         $this->grupo = $alumno->grupo;
         $this->activo = (bool) $alumno->activo;
@@ -210,6 +227,8 @@ class GestionEtiquetas extends Component
     {
         abort_unless(auth()->user()?->puedeEtiquetas($this->alumnoId ? 'editar' : 'crear'), 403);
         $data = $this->validate($this->alumnoRules());
+        $sinDatosAcademicos = $this->esNivelSinDatosAcademicos($data['nivel']);
+
         $payload = [
             'user_id' => auth()->id(),
             'persona_id' => $data['personaId'] ?: null,
@@ -217,9 +236,15 @@ class GestionEtiquetas extends Component
             'apellido_paterno' => filled($data['apellidoPaterno']) ? $this->normalizarNombre($data['apellidoPaterno']) : null,
             'apellido_materno' => filled($data['apellidoMaterno']) ? $this->normalizarNombre($data['apellidoMaterno']) : null,
             'nivel' => $data['nivel'],
-            'generacion' => Str::squish($data['generacion']),
-            'grado' => filled($data['grado']) ? Str::squish($data['grado']) : null,
-            'grupo' => filled($data['grupo']) ? Str::upper(Str::squish($data['grupo'])) : null,
+            'generacion' => ! $sinDatosAcademicos && filled($data['generacion'])
+                ? Str::squish($data['generacion'])
+                : null,
+            'grado' => ! $sinDatosAcademicos && filled($data['grado'])
+                ? Str::squish($data['grado'])
+                : null,
+            'grupo' => ! $sinDatosAcademicos && filled($data['grupo'])
+                ? Str::upper(Str::squish($data['grupo']))
+                : null,
             'activo' => $data['activo'],
         ];
 
@@ -733,6 +758,12 @@ class GestionEtiquetas extends Component
                     : (bool) $alumno->activo,
             ];
 
+            if ($this->esNivelSinDatosAcademicos($payload['nivel'])) {
+                $payload['generacion'] = null;
+                $payload['grado'] = null;
+                $payload['grupo'] = null;
+            }
+
             $firma = $this->firmaDuplicado([
                 'nombre' => $alumno->nombre,
                 'apellido_paterno' => $alumno->apellido_paterno,
@@ -944,6 +975,11 @@ class GestionEtiquetas extends Component
         };
     }
 
+    private function esNivelSinDatosAcademicos(?string $nivel = null): bool
+    {
+        return in_array($nivel ?? $this->nivel, ['Personal', 'Otro'], true);
+    }
+
     private function limpiarAlumno(): void
     {
         $this->reset(['alumnoId', 'personaId', 'nombre', 'apellidoPaterno', 'apellidoMaterno', 'nivel', 'generacion', 'grado', 'grupo']);
@@ -981,7 +1017,7 @@ class GestionEtiquetas extends Component
         $plantillas = EtiquetaPlantilla::query()->orderByDesc('es_predeterminada')->latest()->get();
         $plantillasActivas = $plantillas->where('activo', true);
         $personas = Persona::query()->where('activo', true)->orderBy('nombre')->limit(300)->get(['id', 'nombre']);
-        $generaciones = EtiquetaAlumno::query()->select('generacion')->distinct()->orderBy('generacion')->pluck('generacion');
+        $generaciones = EtiquetaAlumno::query()->whereNotNull('generacion')->select('generacion')->distinct()->orderBy('generacion')->pluck('generacion');
         $grados = EtiquetaAlumno::query()->whereNotNull('grado')->select('grado')->distinct()->orderBy('grado')->pluck('grado');
         $grupos = EtiquetaAlumno::query()->whereNotNull('grupo')->select('grupo')->distinct()->orderBy('grupo')->pluck('grupo');
         $papelera = $this->modalPapelera ? EtiquetaAlumno::onlyTrashed()->latest('deleted_at')->limit(50)->get() : collect();

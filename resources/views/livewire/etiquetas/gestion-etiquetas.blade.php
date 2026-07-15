@@ -554,7 +554,7 @@
                                 <span class="text-xs text-red-600">{{ $message }}</span>
                             @enderror
                         </label>
-                        <label class="text-sm font-bold">Nivel *<flux:select wire:model="nivel"
+                        <label class="text-sm font-bold {{ in_array($nivel, ['Personal', 'Otro'], true) ? 'md:col-span-2' : '' }}">Nivel *<flux:select wire:model.live="nivel"
                                 class="mt-1 w-full rounded-2xl">
                                 <flux:select.option value="">Seleccionar</flux:select.option>
                                 @foreach ($niveles as $item)
@@ -566,26 +566,36 @@
                                 <span class="text-xs text-red-600">{{ $message }}</span>
                             @enderror
                         </label>
-                        <label class="text-sm font-bold">Generación *
-                            <flux:input wire:model="generacion" class="mt-1 w-full rounded-2xl"
-                                placeholder="2023-2026" />
-                            @error('generacion')
-                                <span class="text-xs text-red-600">{{ $message }}</span>
-                            @enderror
-                        </label>
-                        <label class="text-sm font-bold">Grado (opcional)
-                            <flux:input wire:model="grado" class="mt-1 w-full rounded-2xl" placeholder="3°" />
-                            @error('grado')
-                                <span class="text-xs text-red-600">{{ $message }}</span>
-                            @enderror
-                        </label>
-                        <label class="text-sm font-bold">Grupo (opcional)
-                            <flux:input wire:model="grupo" class="mt-1 w-full rounded-2xl uppercase"
-                                placeholder="A" />
-                            @error('grupo')
-                                <span class="text-xs text-red-600">{{ $message }}</span>
-                            @enderror
-                        </label>
+                        @if (in_array($nivel, ['Personal', 'Otro'], true))
+                            <div
+                                class="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm text-emerald-800 md:col-span-2 dark:border-emerald-900 dark:bg-emerald-950/20 dark:text-emerald-200">
+                                Para el nivel <strong>{{ $nivel }}</strong>, generación, licenciatura o grado y grupo
+                                son opcionales y no se mostrarán en el PDF.
+                            </div>
+                        @else
+                            <label class="text-sm font-bold">Generación *
+                                <flux:input wire:model="generacion" class="mt-1 w-full rounded-2xl"
+                                    placeholder="2023-2026" />
+                                @error('generacion')
+                                    <span class="text-xs text-red-600">{{ $message }}</span>
+                                @enderror
+                            </label>
+                            <label class="text-sm font-bold">
+                                {{ $nivel === 'Licenciatura' ? 'Licenciatura (opcional)' : 'Grado (opcional)' }}
+                                <flux:input wire:model="grado" class="mt-1 w-full rounded-2xl"
+                                    placeholder="{{ $nivel === 'Licenciatura' ? 'Lic. en Administración' : '3°' }}" />
+                                @error('grado')
+                                    <span class="text-xs text-red-600">{{ $message }}</span>
+                                @enderror
+                            </label>
+                            <label class="text-sm font-bold">Grupo (opcional)
+                                <flux:input wire:model="grupo" class="mt-1 w-full rounded-2xl uppercase"
+                                    placeholder="A" />
+                                @error('grupo')
+                                    <span class="text-xs text-red-600">{{ $message }}</span>
+                                @enderror
+                            </label>
+                        @endif
                     </div>
                     <label
                         class="flex items-center justify-between rounded-2xl border border-slate-200 p-4 dark:border-zinc-800"><span><strong

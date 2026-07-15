@@ -142,14 +142,16 @@
                                 ? (int) $configuracion['nombre_tamano_medio']
                                 : (int) $configuracion['nombre_tamano_largo']);
 
+                    $sinDatosAcademicos = in_array($alumno->nivel, ['Personal', 'Otro'], true);
+
                     $detalle = collect([
                         filled($alumno->nivel) ? mb_strtoupper($alumno->nivel, 'UTF-8') : null,
 
-                        $configuracion['mostrar_grado'] && filled($alumno->grado)
+                        ! $sinDatosAcademicos && $configuracion['mostrar_grado'] && filled($alumno->grado)
                             ? mb_strtoupper($alumno->grado, 'UTF-8')
                             : null,
 
-                        $configuracion['mostrar_grupo'] && filled($alumno->grupo)
+                        ! $sinDatosAcademicos && $configuracion['mostrar_grupo'] && filled($alumno->grupo)
                             ? 'GRUPO ' . mb_strtoupper($alumno->grupo, 'UTF-8')
                             : null,
                     ])
@@ -174,7 +176,7 @@
                                 {{ $detalle }}
                             @endif
 
-                            @if ($configuracion['mostrar_generacion'] && filled($alumno->generacion))
+                            @if (! $sinDatosAcademicos && $configuracion['mostrar_generacion'] && filled($alumno->generacion))
                                 @if (filled($detalle))
                                     <br>
                                 @endif

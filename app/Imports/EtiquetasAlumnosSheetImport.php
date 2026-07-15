@@ -61,8 +61,8 @@ class EtiquetasAlumnosSheetImport implements SkipsEmptyRows, ToCollection, WithH
                         continue;
                     }
 
-                    if ($nombre === '' || $nivel === '' || $generacion === '') {
-                        $this->reporte['errores'][] = "Fila {$numeroFila}: nombre, nivel y generación son obligatorios.";
+                    if ($nombre === '' || $nivel === '') {
+                        $this->reporte['errores'][] = "Fila {$numeroFila}: nombre y nivel son obligatorios.";
                         continue;
                     }
 
@@ -75,14 +75,21 @@ class EtiquetasAlumnosSheetImport implements SkipsEmptyRows, ToCollection, WithH
                         continue;
                     }
 
+                    $sinDatosAcademicos = in_array($nivelValido, ['Personal', 'Otro'], true);
+
+                    if (! $sinDatosAcademicos && $generacion === '') {
+                        $this->reporte['errores'][] = "Fila {$numeroFila}: la generación es obligatoria para el nivel {$nivelValido}.";
+                        continue;
+                    }
+
                     $payload = [
                         'nombre' => $this->normalizarNombre($nombre),
                         'apellido_paterno' => $apellidoPaterno !== '' ? $this->normalizarNombre($apellidoPaterno) : null,
                         'apellido_materno' => $apellidoMaterno !== '' ? $this->normalizarNombre($apellidoMaterno) : null,
                         'nivel' => $nivelValido,
-                        'generacion' => Str::squish($generacion),
-                        'grado' => $grado !== '' ? Str::squish($grado) : null,
-                        'grupo' => $grupo !== '' ? Str::upper(Str::squish($grupo)) : null,
+                        'generacion' => ! $sinDatosAcademicos && $generacion !== '' ? Str::squish($generacion) : null,
+                        'grado' => ! $sinDatosAcademicos && $grado !== '' ? Str::squish($grado) : null,
+                        'grupo' => ! $sinDatosAcademicos && $grupo !== '' ? Str::upper(Str::squish($grupo)) : null,
                         'activo' => ! in_array(Str::lower(Str::ascii($estado)), ['inactivo', '0', 'no', 'false'], true),
                     ];
 
