@@ -31,6 +31,8 @@ class GestionEtiquetas extends Component
     public string $filtroGrado = '';
     public string $filtroGrupo = '';
     public string $filtroEstado = 'activos';
+    public string $ordenarPor = 'academico';
+    public string $direccionOrden = 'asc';
     public int $porPagina = 15;
     public array $seleccionados = [];
 
@@ -98,7 +100,15 @@ class GestionEtiquetas extends Component
     public string $valorEstado = 'activo';
 
     public array $niveles = [
-        'Preescolar','Primaria','Secundaria','Bachillerato','Licenciatura','Personal','Curso','Taller','Otro',
+        'Preescolar',
+        'Primaria',
+        'Secundaria',
+        'Bachillerato',
+        'Licenciatura',
+        'Personal',
+        'Curso',
+        'Taller',
+        'Otro',
     ];
 
     public function mount(): void
@@ -129,7 +139,7 @@ class GestionEtiquetas extends Component
             'plantillaNombre' => ['required', 'string', 'min:3', 'max:150'],
             'plantillaNivel' => ['nullable', Rule::in($this->niveles)],
             'plantillaDescripcion' => ['nullable', 'string', 'max:1000'],
-            'plantillaFondo' => [Rule::requiredIf(fn () => ! $this->plantillaId), 'nullable', File::image()->types(['jpg','jpeg','png','webp'])->max(10 * 1024)],
+            'plantillaFondo' => [Rule::requiredIf(fn() => ! $this->plantillaId), 'nullable', File::image()->types(['jpg', 'jpeg', 'png', 'webp'])->max(10 * 1024)],
             'plantillaPredeterminada' => ['boolean'],
             'plantillaActiva' => ['boolean'],
             'superiorTop' => ['required', 'numeric', 'between:0,27'],
@@ -141,7 +151,7 @@ class GestionEtiquetas extends Component
             'datosTamano' => ['required', 'integer', 'between:10,50'],
             'nombreColor' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'datosColor' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
-            'alineacion' => ['required', Rule::in(['left','center','right'])],
+            'alineacion' => ['required', Rule::in(['left', 'center', 'right'])],
             'mayusculas' => ['boolean'],
             'mostrarGrado' => ['boolean'],
             'mostrarGrupo' => ['boolean'],
@@ -151,7 +161,7 @@ class GestionEtiquetas extends Component
 
     public function updated($property): void
     {
-        if (in_array($property, ['buscar','filtroNivel','filtroGeneracion','filtroGrado','filtroGrupo','filtroEstado','porPagina'], true)) {
+        if (in_array($property, ['buscar', 'filtroNivel', 'filtroGeneracion', 'filtroGrado', 'filtroGrupo', 'filtroEstado', 'ordenarPor', 'direccionOrden', 'porPagina'], true)) {
             $this->resetPage();
             $this->seleccionados = [];
         }
@@ -214,14 +224,14 @@ class GestionEtiquetas extends Component
         ];
 
         $duplicado = EtiquetaAlumno::query()
-            ->when($this->alumnoId, fn (Builder $q) => $q->where('id', '!=', $this->alumnoId))
+            ->when($this->alumnoId, fn(Builder $q) => $q->where('id', '!=', $this->alumnoId))
             ->where('nombre', $payload['nombre'])
-            ->where(fn (Builder $q) => $payload['apellido_paterno'] === null ? $q->whereNull('apellido_paterno') : $q->where('apellido_paterno', $payload['apellido_paterno']))
-            ->where(fn (Builder $q) => $payload['apellido_materno'] === null ? $q->whereNull('apellido_materno') : $q->where('apellido_materno', $payload['apellido_materno']))
+            ->where(fn(Builder $q) => $payload['apellido_paterno'] === null ? $q->whereNull('apellido_paterno') : $q->where('apellido_paterno', $payload['apellido_paterno']))
+            ->where(fn(Builder $q) => $payload['apellido_materno'] === null ? $q->whereNull('apellido_materno') : $q->where('apellido_materno', $payload['apellido_materno']))
             ->where('nivel', $payload['nivel'])
             ->where('generacion', $payload['generacion'])
-            ->where(fn (Builder $q) => $payload['grado'] === null ? $q->whereNull('grado') : $q->where('grado', $payload['grado']))
-            ->where(fn (Builder $q) => $payload['grupo'] === null ? $q->whereNull('grupo') : $q->where('grupo', $payload['grupo']))
+            ->where(fn(Builder $q) => $payload['grado'] === null ? $q->whereNull('grado') : $q->where('grado', $payload['grado']))
+            ->where(fn(Builder $q) => $payload['grupo'] === null ? $q->whereNull('grupo') : $q->where('grupo', $payload['grupo']))
             ->exists();
         if ($duplicado) {
             $this->addError('nombre', 'Ya existe un alumno con los mismos datos académicos.');
@@ -278,23 +288,26 @@ class GestionEtiquetas extends Component
 
     public function seleccionarPagina(): void
     {
-        $ids = $this->consultaAlumnos()->forPage((int) ($this->paginators['page'] ?? 1), $this->porPagina)->pluck('id')->map(fn ($id) => (string) $id)->all();
+        $ids = $this->consultaAlumnos()->forPage((int) ($this->paginators['page'] ?? 1), $this->porPagina)->pluck('id')->map(fn($id) => (string) $id)->all();
         $this->seleccionados = array_values(array_unique(array_merge($this->seleccionados, $ids)));
     }
 
     public function seleccionarTodosFiltrados(): void
     {
-        $this->seleccionados = $this->consultaAlumnos()->pluck('id')->map(fn ($id) => (string) $id)->all();
-        $this->dispatch('swal', icon: 'success', title: count($this->seleccionados).' alumnos seleccionados');
+        $this->seleccionados = $this->consultaAlumnos()->pluck('id')->map(fn($id) => (string) $id)->all();
+        $this->dispatch('swal', icon: 'success', title: count($this->seleccionados) . ' alumnos seleccionados');
     }
 
-    public function limpiarSeleccion(): void { $this->seleccionados = []; }
+    public function limpiarSeleccion(): void
+    {
+        $this->seleccionados = [];
+    }
 
     public function accionMasiva(string $accion): void
     {
         abort_if(empty($this->seleccionados), 422, 'No hay alumnos seleccionados.');
-        $ids = collect($this->seleccionados)->map(fn ($id) => (int) $id)->unique()->all();
-        if (in_array($accion, ['activar','desactivar'], true)) {
+        $ids = collect($this->seleccionados)->map(fn($id) => (int) $id)->unique()->all();
+        if (in_array($accion, ['activar', 'desactivar'], true)) {
             abort_unless(auth()->user()?->puedeEtiquetas('editar'), 403);
             EtiquetaAlumno::whereIn('id', $ids)->update(['activo' => $accion === 'activar']);
         } elseif ($accion === 'eliminar') {
@@ -313,7 +326,7 @@ class GestionEtiquetas extends Component
                 'accion' => $accion,
                 'alumnos' => $ids,
             ],
-            'notas' => 'Acción masiva: '.$accion,
+            'notas' => 'Acción masiva: ' . $accion,
         ]);
 
         $this->seleccionados = [];
@@ -482,7 +495,7 @@ class GestionEtiquetas extends Component
                 if ($actual && $nuevoPath && $actual->fondo) {
                     EtiquetaPlantilla::create([
                         'user_id' => auth()->id(),
-                        'nombre' => Str::limit($actual->nombre.' · versión anterior '.now()->format('d-m-Y H:i'), 150, ''),
+                        'nombre' => Str::limit($actual->nombre . ' · versión anterior ' . now()->format('d-m-Y H:i'), 150, ''),
                         'nivel' => $actual->nivel,
                         'descripcion' => 'Fondo conservado automáticamente al reemplazar la imagen de la plantilla.',
                         'fondo' => $actual->fondo,
@@ -503,13 +516,20 @@ class GestionEtiquetas extends Component
                     'es_predeterminada' => $data['plantillaPredeterminada'],
                     'activo' => $data['plantillaPredeterminada'] ? true : $data['plantillaActiva'],
                     'configuracion' => [
-                        'superior_top' => (float) $data['superiorTop'], 'inferior_top' => (float) $data['inferiorTop'],
-                        'ancho_bloque' => (float) $data['anchoBloque'], 'nombre_tamano' => (int) $data['nombreTamano'],
-                        'nombre_tamano_medio' => (int) $data['nombreTamanoMedio'], 'nombre_tamano_largo' => (int) $data['nombreTamanoLargo'],
-                        'datos_tamano' => (int) $data['datosTamano'], 'nombre_color' => $data['nombreColor'],
-                        'datos_color' => $data['datosColor'], 'alineacion' => $data['alineacion'],
-                        'mayusculas' => $data['mayusculas'], 'mostrar_grado' => $data['mostrarGrado'],
-                        'mostrar_grupo' => $data['mostrarGrupo'], 'mostrar_generacion' => $data['mostrarGeneracion'],
+                        'superior_top' => (float) $data['superiorTop'],
+                        'inferior_top' => (float) $data['inferiorTop'],
+                        'ancho_bloque' => (float) $data['anchoBloque'],
+                        'nombre_tamano' => (int) $data['nombreTamano'],
+                        'nombre_tamano_medio' => (int) $data['nombreTamanoMedio'],
+                        'nombre_tamano_largo' => (int) $data['nombreTamanoLargo'],
+                        'datos_tamano' => (int) $data['datosTamano'],
+                        'nombre_color' => $data['nombreColor'],
+                        'datos_color' => $data['datosColor'],
+                        'alineacion' => $data['alineacion'],
+                        'mayusculas' => $data['mayusculas'],
+                        'mostrar_grado' => $data['mostrarGrado'],
+                        'mostrar_grupo' => $data['mostrarGrupo'],
+                        'mostrar_generacion' => $data['mostrarGeneracion'],
                     ],
                 ];
 
@@ -560,7 +580,7 @@ class GestionEtiquetas extends Component
     public function alternarPermiso(int $userId, string $accion): void
     {
         abort_unless(auth()->user()?->puedeEtiquetas('administrar'), 403);
-        abort_unless(in_array($accion, ['ver','crear','editar','eliminar','importar','descargar','administrar'], true), 422);
+        abort_unless(in_array($accion, ['ver', 'crear', 'editar', 'eliminar', 'importar', 'descargar', 'administrar'], true), 422);
         if ($userId === 1) {
             $this->dispatch('swal', icon: 'warning', title: 'El administrador principal conserva acceso completo');
             return;
@@ -622,8 +642,8 @@ class GestionEtiquetas extends Component
             $this->dispatch(
                 'swal',
                 icon: $errores || $omitidos ? 'warning' : 'success',
-                title: ($importados + $actualizados).' registro(s) procesado(s)',
-                text: $importados.' nuevos · '.$actualizados.' actualizados · '.$omitidos.' duplicados omitidos · '.count($errores).' filas con error',
+                title: ($importados + $actualizados) . ' registro(s) procesado(s)',
+                text: $importados . ' nuevos · ' . $actualizados . ' actualizados · ' . $omitidos . ' duplicados omitidos · ' . count($errores) . ' filas con error',
             );
         } catch (\Throwable $exception) {
             report($exception);
@@ -638,15 +658,15 @@ class GestionEtiquetas extends Component
 
         return [
             'accionNivel' => ['required', Rule::in($accionesComunes)],
-            'valorNivel' => [Rule::requiredIf(fn () => $this->accionNivel !== 'sin_cambios'), 'nullable', Rule::in($this->niveles)],
+            'valorNivel' => [Rule::requiredIf(fn() => $this->accionNivel !== 'sin_cambios'), 'nullable', Rule::in($this->niveles)],
             'accionGeneracion' => ['required', Rule::in($accionesComunes)],
-            'valorGeneracion' => [Rule::requiredIf(fn () => $this->accionGeneracion !== 'sin_cambios'), 'nullable', 'string', 'max:100'],
+            'valorGeneracion' => [Rule::requiredIf(fn() => $this->accionGeneracion !== 'sin_cambios'), 'nullable', 'string', 'max:100'],
             'accionGrado' => ['required', Rule::in($accionesOpcionales)],
-            'valorGrado' => [Rule::requiredIf(fn () => in_array($this->accionGrado, ['reemplazar', 'rellenar_vacios'], true)), 'nullable', 'string', 'max:50'],
+            'valorGrado' => [Rule::requiredIf(fn() => in_array($this->accionGrado, ['reemplazar', 'rellenar_vacios'], true)), 'nullable', 'string', 'max:50'],
             'accionGrupo' => ['required', Rule::in($accionesOpcionales)],
-            'valorGrupo' => [Rule::requiredIf(fn () => in_array($this->accionGrupo, ['reemplazar', 'rellenar_vacios'], true)), 'nullable', 'string', 'max:50'],
+            'valorGrupo' => [Rule::requiredIf(fn() => in_array($this->accionGrupo, ['reemplazar', 'rellenar_vacios'], true)), 'nullable', 'string', 'max:50'],
             'accionEstado' => ['required', Rule::in(['sin_cambios', 'reemplazar'])],
-            'valorEstado' => [Rule::requiredIf(fn () => $this->accionEstado === 'reemplazar'), 'nullable', Rule::in(['activo', 'inactivo'])],
+            'valorEstado' => [Rule::requiredIf(fn() => $this->accionEstado === 'reemplazar'), 'nullable', Rule::in(['activo', 'inactivo'])],
         ];
     }
 
@@ -661,8 +681,8 @@ class GestionEtiquetas extends Component
     private function evaluarEdicionMasiva(bool $incluirModelos = false): array
     {
         $ids = collect($this->seleccionados)
-            ->filter(fn ($id) => is_numeric($id))
-            ->map(fn ($id) => (int) $id)
+            ->filter(fn($id) => is_numeric($id))
+            ->map(fn($id) => (int) $id)
             ->unique()
             ->values();
 
@@ -676,10 +696,15 @@ class GestionEtiquetas extends Component
         $firmasExternas = EtiquetaAlumno::query()
             ->whereNotIn('id', $ids)
             ->get([
-                'nombre', 'apellido_paterno', 'apellido_materno', 'nivel',
-                'generacion', 'grado', 'grupo',
+                'nombre',
+                'apellido_paterno',
+                'apellido_materno',
+                'nivel',
+                'generacion',
+                'grado',
+                'grupo',
             ])
-            ->mapWithKeys(fn (EtiquetaAlumno $alumno) => [
+            ->mapWithKeys(fn(EtiquetaAlumno $alumno) => [
                 $this->firmaDuplicado([
                     'nombre' => $alumno->nombre,
                     'apellido_paterno' => $alumno->apellido_paterno,
@@ -726,13 +751,15 @@ class GestionEtiquetas extends Component
             }
 
             $cambios = [];
-            foreach ([
-                'nivel' => 'Nivel',
-                'generacion' => 'Generación',
-                'grado' => 'Grado',
-                'grupo' => 'Grupo',
-                'activo' => 'Estado',
-            ] as $campo => $etiqueta) {
+            foreach (
+                [
+                    'nivel' => 'Nivel',
+                    'generacion' => 'Generación',
+                    'grado' => 'Grado',
+                    'grupo' => 'Grupo',
+                    'activo' => 'Estado',
+                ] as $campo => $etiqueta
+            ) {
                 $antes = $campo === 'activo'
                     ? ($alumno->activo ? 'Activo' : 'Inactivo')
                     : ($alumno->{$campo} ?? 'Vacío');
@@ -816,7 +843,7 @@ class GestionEtiquetas extends Component
             $datos['grado'] ?? null,
             $datos['grupo'] ?? null,
         ])
-            ->map(fn ($valor) => Str::lower(Str::ascii(Str::squish((string) ($valor ?? '')))))
+            ->map(fn($valor) => Str::lower(Str::ascii(Str::squish((string) ($valor ?? '')))))
             ->implode('|');
     }
 
@@ -830,7 +857,7 @@ class GestionEtiquetas extends Component
             'grupo' => $this->accionGrupo,
             'estado' => $this->accionEstado,
         ])
-            ->reject(fn ($accion) => $accion === 'sin_cambios')
+            ->reject(fn($accion) => $accion === 'sin_cambios')
             ->keys()
             ->values()
             ->all();
@@ -857,38 +884,88 @@ class GestionEtiquetas extends Component
 
     private function consultaAlumnos(): Builder
     {
-        return EtiquetaAlumno::query()
+        $query = EtiquetaAlumno::query()
             ->when(trim($this->buscar) !== '', function (Builder $q) {
                 $buscar = trim($this->buscar);
-                $q->where(fn (Builder $sub) => $sub->where('nombre', 'like', "%{$buscar}%")
+                $q->where(fn(Builder $sub) => $sub->where('nombre', 'like', "%{$buscar}%")
                     ->orWhere('apellido_paterno', 'like', "%{$buscar}%")
                     ->orWhere('apellido_materno', 'like', "%{$buscar}%")
                     ->orWhere('nivel', 'like', "%{$buscar}%")->orWhere('generacion', 'like', "%{$buscar}%")
                     ->orWhere('grado', 'like', "%{$buscar}%")->orWhere('grupo', 'like', "%{$buscar}%"));
             })
-            ->when($this->filtroNivel !== '', fn (Builder $q) => $q->where('nivel', $this->filtroNivel))
-            ->when($this->filtroGeneracion !== '', fn (Builder $q) => $q->where('generacion', $this->filtroGeneracion))
-            ->when($this->filtroGrado !== '', fn (Builder $q) => $q->where('grado', $this->filtroGrado))
-            ->when($this->filtroGrupo !== '', fn (Builder $q) => $q->where('grupo', $this->filtroGrupo))
-            ->when($this->filtroEstado === 'activos', fn (Builder $q) => $q->where('activo', true))
-            ->when($this->filtroEstado === 'inactivos', fn (Builder $q) => $q->where('activo', false));
+            ->when($this->filtroNivel !== '', fn(Builder $q) => $q->where('nivel', $this->filtroNivel))
+            ->when($this->filtroGeneracion !== '', fn(Builder $q) => $q->where('generacion', $this->filtroGeneracion))
+            ->when($this->filtroGrado !== '', fn(Builder $q) => $q->where('grado', $this->filtroGrado))
+            ->when($this->filtroGrupo !== '', fn(Builder $q) => $q->where('grupo', $this->filtroGrupo))
+            ->when($this->filtroEstado === 'activos', fn(Builder $q) => $q->where('activo', true))
+            ->when($this->filtroEstado === 'inactivos', fn(Builder $q) => $q->where('activo', false));
+
+        return $this->aplicarOrdenAlumnos($query);
+    }
+
+    private function aplicarOrdenAlumnos(Builder $query): Builder
+    {
+        $direccion = $this->direccionOrden === 'desc' ? 'desc' : 'asc';
+
+        return match ($this->ordenarPor) {
+            'id' => $query
+                ->orderBy('id', $direccion),
+            'fecha_creacion' => $query
+                ->orderByRaw('created_at IS NULL')
+                ->orderBy('created_at', $direccion)
+                ->orderBy('id', $direccion),
+            'nombre' => $query
+                ->orderBy('nombre', $direccion)
+                ->orderByRaw('apellido_paterno IS NULL')
+                ->orderBy('apellido_paterno', $direccion)
+                ->orderByRaw('apellido_materno IS NULL')
+                ->orderBy('apellido_materno', $direccion)
+                ->orderBy('id', $direccion),
+            'apellidos' => $query
+                ->orderByRaw('apellido_paterno IS NULL')
+                ->orderBy('apellido_paterno', $direccion)
+                ->orderByRaw('apellido_materno IS NULL')
+                ->orderBy('apellido_materno', $direccion)
+                ->orderBy('nombre', $direccion)
+                ->orderBy('id', $direccion),
+            default => $query
+                ->orderBy('nivel', $direccion)
+                ->orderBy('generacion', $direccion)
+                ->orderByRaw('grado IS NULL')
+                ->orderBy('grado', $direccion)
+                ->orderByRaw('grupo IS NULL')
+                ->orderBy('grupo', $direccion)
+                ->orderBy('nombre', $direccion)
+                ->orderByRaw('apellido_paterno IS NULL')
+                ->orderBy('apellido_paterno', $direccion)
+                ->orderByRaw('apellido_materno IS NULL')
+                ->orderBy('apellido_materno', $direccion)
+                ->orderBy('id', $direccion),
+        };
     }
 
     private function limpiarAlumno(): void
     {
-        $this->reset(['alumnoId','personaId','nombre','apellidoPaterno','apellidoMaterno','nivel','generacion','grado','grupo']);
+        $this->reset(['alumnoId', 'personaId', 'nombre', 'apellidoPaterno', 'apellidoMaterno', 'nivel', 'generacion', 'grado', 'grupo']);
         $this->activo = true;
         $this->resetValidation();
     }
 
     private function limpiarPlantilla(): void
     {
-        $this->reset(['plantillaId','plantillaNombre','plantillaNivel','plantillaDescripcion','plantillaFondo','plantillaFondoActual']);
+        $this->reset(['plantillaId', 'plantillaNombre', 'plantillaNivel', 'plantillaDescripcion', 'plantillaFondo', 'plantillaFondoActual']);
         $this->plantillaPredeterminada = ! EtiquetaPlantilla::exists();
         $this->plantillaActiva = true;
-        $this->superiorTop = '3.15'; $this->inferiorTop = '17.10'; $this->anchoBloque = '90';
-        $this->nombreTamano = '60'; $this->nombreTamanoMedio = '52'; $this->nombreTamanoLargo = '44'; $this->datosTamano = '21';
-        $this->nombreColor = '#111827'; $this->datosColor = '#334155'; $this->alineacion = 'center';
+        $this->superiorTop = '3.15';
+        $this->inferiorTop = '17.10';
+        $this->anchoBloque = '90';
+        $this->nombreTamano = '60';
+        $this->nombreTamanoMedio = '52';
+        $this->nombreTamanoLargo = '44';
+        $this->datosTamano = '21';
+        $this->nombreColor = '#111827';
+        $this->datosColor = '#334155';
+        $this->alineacion = 'center';
         $this->mayusculas = $this->mostrarGrado = $this->mostrarGrupo = $this->mostrarGeneracion = true;
         $this->resetValidation();
     }
@@ -900,10 +977,10 @@ class GestionEtiquetas extends Component
 
     public function render()
     {
-        $alumnos = $this->consultaAlumnos()->orderBy('nivel')->orderBy('generacion')->orderBy('grado')->orderBy('grupo')->orderBy('nombre')->orderBy('apellido_paterno')->orderBy('apellido_materno')->paginate($this->porPagina);
+        $alumnos = $this->consultaAlumnos()->paginate($this->porPagina);
         $plantillas = EtiquetaPlantilla::query()->orderByDesc('es_predeterminada')->latest()->get();
         $plantillasActivas = $plantillas->where('activo', true);
-        $personas = Persona::query()->where('activo', true)->orderBy('nombre')->limit(300)->get(['id','nombre']);
+        $personas = Persona::query()->where('activo', true)->orderBy('nombre')->limit(300)->get(['id', 'nombre']);
         $generaciones = EtiquetaAlumno::query()->select('generacion')->distinct()->orderBy('generacion')->pluck('generacion');
         $grados = EtiquetaAlumno::query()->whereNotNull('grado')->select('grado')->distinct()->orderBy('grado')->pluck('grado');
         $grupos = EtiquetaAlumno::query()->whereNotNull('grupo')->select('grupo')->distinct()->orderBy('grupo')->pluck('grupo');
@@ -913,12 +990,24 @@ class GestionEtiquetas extends Component
             ? User::query()->with('permisoEtiquetas')->orderBy('name')->get()
             : collect();
         $stats = [
-            'total' => EtiquetaAlumno::count(), 'activos' => EtiquetaAlumno::where('activo', true)->count(),
-            'niveles' => EtiquetaAlumno::distinct('nivel')->count('nivel'), 'plantillas' => $plantillasActivas->count(),
+            'total' => EtiquetaAlumno::count(),
+            'activos' => EtiquetaAlumno::where('activo', true)->count(),
+            'niveles' => EtiquetaAlumno::distinct('nivel')->count('nivel'),
+            'plantillas' => $plantillasActivas->count(),
         ];
 
         return view('livewire.etiquetas.gestion-etiquetas', compact(
-            'alumnos','plantillas','plantillasActivas','personas','generaciones','grados','grupos','papelera','historial','usuariosPermisos','stats'
+            'alumnos',
+            'plantillas',
+            'plantillasActivas',
+            'personas',
+            'generaciones',
+            'grados',
+            'grupos',
+            'papelera',
+            'historial',
+            'usuariosPermisos',
+            'stats'
         ));
     }
 }
