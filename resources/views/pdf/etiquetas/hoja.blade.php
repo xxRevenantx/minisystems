@@ -89,7 +89,7 @@
 
         .nombre {
             width: 100%;
-            line-height: 1;
+            line-height: 55px;
             color: {{ $configuracion['nombre_color'] }};
             word-wrap: break-word;
             overflow-wrap: break-word;
@@ -143,7 +143,7 @@
                                 : (int) $configuracion['nombre_tamano_largo']);
 
                     $detalle = collect([
-                        // filled($alumno->nivel) ? mb_strtoupper($alumno->nivel, 'UTF-8') : null,
+                        filled($alumno->nivel) ? mb_strtoupper($alumno->nivel, 'UTF-8') : null,
 
                         $configuracion['mostrar_grado'] && filled($alumno->grado)
                             ? mb_strtoupper($alumno->grado, 'UTF-8')
