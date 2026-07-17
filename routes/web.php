@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 use App\Http\Controllers\ImagesController;
 use App\Http\Controllers\ImageOptimizerController;
+use App\Http\Controllers\ImageOptimizerBatchController;
 use App\Http\Controllers\PDFController;
 use App\Http\Controllers\ReconocimientoController;
 use App\Http\Controllers\CreativeCsvController;
@@ -47,6 +48,17 @@ Route::middleware(['auth'])->group(function () {
     // MIS RUTAS
     Route::get('images', [ImagesController::class, 'index'])->name('images');
     Route::get('images/optimizar', [ImagesController::class, 'optimizer'])->name('images.optimizer');
+
+    // Carga progresiva: cada imagen viaja en una petición independiente y se procesa en cola.
+    Route::prefix('images/optimizer-api')->name('images.optimizer.api.')->group(function () {
+        Route::get('lote-activo', [ImageOptimizerBatchController::class, 'active'])->name('active');
+        Route::post('lotes', [ImageOptimizerBatchController::class, 'store'])->name('store');
+        Route::get('lotes/{batch}', [ImageOptimizerBatchController::class, 'show'])->name('show');
+        Route::post('lotes/{batch}/archivos/{item}', [ImageOptimizerBatchController::class, 'upload'])->name('upload');
+        Route::post('lotes/{batch}/archivos/{item}/fallo-subida', [ImageOptimizerBatchController::class, 'markUploadFailed'])->name('upload-failed');
+        Route::post('lotes/{batch}/archivos/{item}/reintentar', [ImageOptimizerBatchController::class, 'retry'])->name('retry');
+        Route::delete('lotes/{batch}', [ImageOptimizerBatchController::class, 'destroy'])->name('destroy');
+    });
     Route::get('images/optimizar/{batch}/{type}/{filename}/preview', [ImageOptimizerController::class, 'preview'])
         ->whereIn('type', ['originals', 'outputs'])
         ->name('images.optimizer.preview');

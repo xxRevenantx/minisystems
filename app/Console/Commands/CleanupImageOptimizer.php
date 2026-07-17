@@ -2,15 +2,17 @@
 
 namespace App\Console\Commands;
 
+use App\Models\ImageOptimizerBatch;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 class CleanupImageOptimizer extends Command
 {
     protected $signature = 'images:cleanup-optimizer';
 
-    protected $description = 'Elimina lotes y ZIP temporales vencidos del optimizador de imágenes';
+    protected $description = 'Elimina lotes, originales y ZIP temporales vencidos del optimizador de imágenes';
 
     public function handle(): int
     {
@@ -18,9 +20,23 @@ class CleanupImageOptimizer extends Command
         $deletedBatches = 0;
         $deletedZips = 0;
 
+        if (Schema::hasTable('image_optimizer_batches')) {
+            ImageOptimizerBatch::query()
+                ->where('expires_at', '<=', now())
+                ->orderBy('id')
+                ->chunkById(100, function ($batches) use ($disk, &$deletedBatches): void {
+                    foreach ($batches as $batch) {
+                        $disk->deleteDirectory($batch->basePath());
+                        $batch->delete();
+                        $deletedBatches++;
+                    }
+                });
+        }
+
+        // Compatibilidad con carpetas antiguas creadas antes del registro en BD.
         foreach ($disk->directories('image-optimizer') as $userDirectory) {
             foreach ($disk->directories($userDirectory) as $batchDirectory) {
-                if ($this->isExpired($disk, $batchDirectory)) {
+                if ($this->isExpiredLegacyDirectory($disk, $batchDirectory)) {
                     $disk->deleteDirectory($batchDirectory);
                     $deletedBatches++;
                 }
@@ -38,7 +54,7 @@ class CleanupImageOptimizer extends Command
                     $deletedZips++;
                 }
             } catch (\Throwable) {
-                // Un archivo temporal dañado no debe detener la limpieza.
+                // Un ZIP dañado no debe detener la limpieza.
             }
         }
 
@@ -47,8 +63,15 @@ class CleanupImageOptimizer extends Command
         return self::SUCCESS;
     }
 
-    private function isExpired($disk, string $batchDirectory): bool
+    private function isExpiredLegacyDirectory($disk, string $batchDirectory): bool
     {
+        $uuid = basename($batchDirectory);
+
+        if (Schema::hasTable('image_optimizer_batches')
+            && ImageOptimizerBatch::query()->where('uuid', $uuid)->exists()) {
+            return false;
+        }
+
         $metadataPath = $batchDirectory.'/meta.json';
 
         if ($disk->exists($metadataPath)) {

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ImageOptimizerBatch;
 use App\Services\SimpleZipService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -41,9 +42,9 @@ class ImageOptimizerController extends Controller
 
     public function downloadBatch(Request $request, string $batch, SimpleZipService $zipService): BinaryFileResponse
     {
-        $this->validateBatch($batch);
+        $model = $this->ownedBatch($request, $batch);
         $disk = Storage::disk('local');
-        $basePath = 'image-optimizer/'.$request->user()->id.'/'.$batch.'/outputs';
+        $basePath = $model->basePath().'/outputs';
         $files = $disk->files($basePath);
         abort_if($files === [], 404, 'No hay imágenes optimizadas disponibles en este lote.');
 
@@ -71,15 +72,24 @@ class ImageOptimizerController extends Controller
 
     private function authorizedPath(Request $request, string $batch, string $type, string $filename): string
     {
-        $this->validateBatch($batch);
+        $model = $this->ownedBatch($request, $batch);
         abort_unless($filename === basename($filename), 404);
         abort_if(str_contains($filename, "\0"), 404);
 
-        return 'image-optimizer/'.$request->user()->id.'/'.$batch.'/'.$type.'/'.$filename;
+        return $model->basePath().'/'.$type.'/'.$filename;
     }
 
-    private function validateBatch(string $batch): void
+    private function ownedBatch(Request $request, string $batch): ImageOptimizerBatch
     {
         abort_unless(Str::isUuid($batch), 404);
+
+        $model = ImageOptimizerBatch::query()
+            ->where('uuid', $batch)
+            ->where('user_id', $request->user()->id)
+            ->firstOrFail();
+
+        abort_if($model->expires_at?->isPast(), 410, 'El lote temporal ya venció.');
+
+        return $model;
     }
 }

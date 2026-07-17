@@ -1,3 +1,5 @@
+import './image-optimizer-uploader';
+
 /**
  * Comportamiento de la biblioteca de diseños de reconocimientos.
  * Se mantiene fuera del atributo x-data para evitar que las comillas del
