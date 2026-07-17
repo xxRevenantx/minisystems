@@ -8,6 +8,7 @@ use App\Livewire\Settings\TwoFactor;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 use App\Http\Controllers\ImagesController;
+use App\Http\Controllers\ImageOptimizerController;
 use App\Http\Controllers\PDFController;
 use App\Http\Controllers\ReconocimientoController;
 use App\Http\Controllers\CreativeCsvController;
@@ -45,6 +46,14 @@ Route::middleware(['auth'])->group(function () {
 
     // MIS RUTAS
     Route::get('images', [ImagesController::class, 'index'])->name('images');
+    Route::get('images/optimizar', [ImagesController::class, 'optimizer'])->name('images.optimizer');
+    Route::get('images/optimizar/{batch}/{type}/{filename}/preview', [ImageOptimizerController::class, 'preview'])
+        ->whereIn('type', ['originals', 'outputs'])
+        ->name('images.optimizer.preview');
+    Route::get('images/optimizar/{batch}/{filename}/descargar', [ImageOptimizerController::class, 'download'])
+        ->name('images.optimizer.download');
+    Route::get('images/optimizar/{batch}/descargar-zip', [ImageOptimizerController::class, 'downloadBatch'])
+        ->name('images.optimizer.download-batch');
 
     // MARCO DE IMAGENES
     Route::get('marcos', [ImagesController::class, 'marcos'])->name('marcos');

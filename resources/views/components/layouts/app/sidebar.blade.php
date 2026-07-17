@@ -110,6 +110,11 @@
                     <flux:navlist.item icon="photo" :href="route('images')" :current="request()->routeIs('images')"
                         wire:navigate>{{ __('System Images') }}</flux:navlist.item>
 
+                    <flux:navlist.item icon="arrow-trending-down" :href="route('images.optimizer')"
+                        :current="request()->routeIs('images.optimizer*')" wire:navigate>
+                        {{ __('Optimizar imágenes') }}
+                    </flux:navlist.item>
+
                 </flux:navlist.group>
             </flux:navlist.group>
         </flux:navlist>

@@ -2,21 +2,20 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Images;
-use App\Http\Requests\StoreImagesRequest;
-use App\Http\Requests\UpdateImagesRequest;
-
 class ImagesController extends Controller
 {
-
     public function index()
     {
-
-        return view('images.index');
+        return view('images.index', ['section' => 'processor']);
     }
 
-    public function marcos(){
+    public function optimizer()
+    {
+        return view('images.index', ['section' => 'optimizer']);
+    }
+
+    public function marcos()
+    {
         return view('marcos.index');
     }
-
 }
