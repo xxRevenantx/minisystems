@@ -48,7 +48,7 @@ class CreacionImagenes extends Component
     protected function rules(): array
     {
         return [
-            'images' => ['required', 'array', 'min:1', 'max:100'],
+            'images' => ['required', 'array', 'min:1', 'max:500'],
             'images.*' => [
                 'required',
                 File::image()->types(['jpg', 'jpeg', 'png', 'webp'])->max(20 * 1024),
@@ -74,7 +74,7 @@ class CreacionImagenes extends Component
     {
         return [
             'images.required' => 'Selecciona al menos una imagen.',
-            'images.max' => 'Puedes procesar hasta 100 imágenes por lote.',
+            'images.max' => 'Puedes procesar hasta 500 imágenes por lote.',
             'images.*.max' => 'Cada imagen puede pesar hasta 20 MB.',
             'renamePattern.required' => 'Define el patrón de nombre de salida.',
         ];
@@ -114,6 +114,38 @@ class CreacionImagenes extends Component
         }
     }
 
+
+    /**
+     * Restaura en la interfaz la configuración congelada de un lote progresivo.
+     */
+    public function cargarConfiguracionLote(array $settings): void
+    {
+        $this->marco = filled($settings['marco_id'] ?? null) ? (int) $settings['marco_id'] : null;
+        $this->orientationMode = in_array(($settings['orientation_mode'] ?? null), ['auto', 'desktop', 'mobile'], true)
+            ? (string) $settings['orientation_mode']
+            : 'auto';
+        $this->squareMode = in_array(($settings['square_mode'] ?? null), ['desktop', 'mobile'], true)
+            ? (string) $settings['square_mode']
+            : 'desktop';
+        $this->missingFrameBehavior = in_array(($settings['missing_frame_behavior'] ?? null), ['skip', 'alternate'], true)
+            ? (string) $settings['missing_frame_behavior']
+            : 'skip';
+        $this->fitMode = in_array(($settings['fit_mode'] ?? null), ['cover', 'contain', 'blur'], true)
+            ? (string) $settings['fit_mode']
+            : 'cover';
+        $this->format = in_array(($settings['format'] ?? null), ['jpg', 'png', 'webp', 'original'], true)
+            ? (string) $settings['format']
+            : 'jpg';
+        $this->quality = max(60, min(100, (int) ($settings['quality'] ?? 88)));
+        $this->renamePattern = mb_substr((string) ($settings['rename_pattern'] ?? '{orig}_{index}'), 0, 120);
+        $this->organizeFolders = (bool) ($settings['organize_folders'] ?? true);
+        $this->presetSocialId = filled($settings['preset_social_id'] ?? null) ? (int) $settings['preset_social_id'] : null;
+        $this->desktopWidth = max(320, min(6000, (int) ($settings['desktop_width'] ?? 2058)));
+        $this->desktopHeight = max(320, min(6000, (int) ($settings['desktop_height'] ?? 1365)));
+        $this->mobileWidth = max(320, min(6000, (int) ($settings['mobile_width'] ?? 1365)));
+        $this->mobileHeight = max(320, min(6000, (int) ($settings['mobile_height'] ?? 2058)));
+    }
+
     public function updatedImageSettings($value, string $path): void
     {
         if (! str_ends_with($path, '.focus')) {
@@ -144,7 +176,7 @@ class CreacionImagenes extends Component
     {
         if ($this->paso === 1) {
             $this->validate([
-                'images' => ['required', 'array', 'min:1', 'max:100'],
+                'images' => ['required', 'array', 'min:1', 'max:500'],
                 'images.*' => [
                     'required',
                     File::image()->types(['jpg', 'jpeg', 'png', 'webp'])->max(20 * 1024),
@@ -693,6 +725,10 @@ class CreacionImagenes extends Component
             'presetsSociales' => Schema::hasTable('presets_sociales')
                 ? PresetSocial::query()->where('activo', true)->orderBy('red_social')->orderBy('nombre')->get()
                 : collect(),
+            'maxFiles' => (int) config('system_images.max_files', 500),
+            'maxFileMb' => round((int) config('system_images.max_file_kb', 20 * 1024) / 1024),
+            'uploadConcurrency' => (int) config('system_images.upload_concurrency', 3),
+            'retentionHours' => (int) config('system_images.retention_hours', 24),
         ]);
     }
 }

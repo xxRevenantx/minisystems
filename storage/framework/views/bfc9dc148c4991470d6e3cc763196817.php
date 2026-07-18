@@ -81,7 +81,7 @@ if (isset($__slots)) unset($__slots);
 $__split = function ($name, $params = []) {
     return [$name, $params];
 };
-[$__name, $__params] = $__split('images.creacion-imagenes', []);
+[$__name, $__params] = $__split('images.creacion-imagenes-corregida', []);
 
 $__html = app('livewire')->mount($__name, $__params, 'lw-3165379333-2', $__slots ?? [], get_defined_vars());
 

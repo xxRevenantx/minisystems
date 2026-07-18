@@ -1,7 +1,7 @@
 @echo off
 setlocal EnableExtensions
 cd /d "%~dp0"
-title MiniSystems - Worker del optimizador de imagenes
+title MiniSystems - Worker de imagenes
 
 set "PHP_BIN=php"
 where php >nul 2>&1
@@ -22,15 +22,15 @@ if not defined PHP_BIN (
 )
 
  echo ================================================================
- echo  MINISYSTEMS - COLA DEL OPTIMIZADOR DE IMAGENES
+ echo  MINISYSTEMS - COLA DE SYSTEM IMAGES Y OPTIMIZADOR
  echo ================================================================
  echo  PHP: %PHP_BIN%
- echo  Mantenga esta ventana abierta mientras use lotes grandes.
+ echo  Mantenga esta ventana abierta mientras use lotes grandes de System Images u Optimizador.
  echo  Para detener el worker presione Ctrl+C.
  echo.
 
 :worker
-"%PHP_BIN%" artisan queue:work database --queue=image-optimizer,default --sleep=1 --tries=1 --timeout=600 --memory=1024 --max-time=3600
+"%PHP_BIN%" artisan queue:work database --queue=system-images,image-optimizer,default --sleep=1 --tries=1 --timeout=900 --memory=1024 --max-time=3600
 
  echo.
  echo El worker se detuvo. Se reiniciara en 3 segundos...

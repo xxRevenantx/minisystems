@@ -10,6 +10,8 @@ use Laravel\Fortify\Features;
 use App\Http\Controllers\ImagesController;
 use App\Http\Controllers\ImageOptimizerController;
 use App\Http\Controllers\ImageOptimizerBatchController;
+use App\Http\Controllers\SystemImageBatchController;
+use App\Http\Controllers\SystemImageController;
 use App\Http\Controllers\SocialAiMediaController;
 use App\Http\Controllers\PDFController;
 use App\Http\Controllers\ReconocimientoController;
@@ -54,6 +56,19 @@ Route::middleware(['auth'])->group(function () {
         Route::post('lotes/{batch}/archivos/{item}/reintentar', [ImageOptimizerBatchController::class, 'retry'])->name('retry');
         Route::delete('lotes/{batch}', [ImageOptimizerBatchController::class, 'destroy'])->name('destroy');
     });
+    Route::prefix('images/system-api')->name('images.system.api.')->group(function () {
+        Route::get('lote-activo', [SystemImageBatchController::class, 'active'])->name('active');
+        Route::post('lotes', [SystemImageBatchController::class, 'store'])->name('store');
+        Route::get('lotes/{batch}', [SystemImageBatchController::class, 'show'])->name('show');
+        Route::post('lotes/{batch}/archivos/{item}', [SystemImageBatchController::class, 'upload'])->name('upload');
+        Route::post('lotes/{batch}/archivos/{item}/fallo-subida', [SystemImageBatchController::class, 'markUploadFailed'])->name('upload-failed');
+        Route::post('lotes/{batch}/archivos/{item}/reintentar', [SystemImageBatchController::class, 'retry'])->name('retry');
+        Route::delete('lotes/{batch}', [SystemImageBatchController::class, 'destroy'])->name('destroy');
+    });
+    Route::get('images/system-images/{batch}/archivos/{item}/{type}/preview', [SystemImageController::class, 'preview'])
+        ->whereIn('type', ['original', 'output'])->name('images.system.preview');
+    Route::get('images/system-images/{batch}/archivos/{item}/descargar', [SystemImageController::class, 'download'])->name('images.system.download');
+    Route::get('images/system-images/{batch}/descargar-zip', [SystemImageController::class, 'downloadBatch'])->name('images.system.download-batch');
     Route::get('images/optimizar/{batch}/{type}/{filename}/preview', [ImageOptimizerController::class, 'preview'])
         ->whereIn('type', ['originals', 'outputs'])->name('images.optimizer.preview');
     Route::get('images/optimizar/{batch}/{filename}/descargar', [ImageOptimizerController::class, 'download'])->name('images.optimizer.download');
