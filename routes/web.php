@@ -10,6 +10,7 @@ use Laravel\Fortify\Features;
 use App\Http\Controllers\ImagesController;
 use App\Http\Controllers\ImageOptimizerController;
 use App\Http\Controllers\ImageOptimizerBatchController;
+use App\Http\Controllers\SocialAiMediaController;
 use App\Http\Controllers\PDFController;
 use App\Http\Controllers\ReconocimientoController;
 use App\Http\Controllers\CreativeCsvController;
@@ -30,26 +31,20 @@ Route::get('verificar/{codigo}', [ValidationController::class, 'show'])
     ->name('validacion.publica');
 
 Route::middleware(['auth'])->group(function () {
-
-    // MINISYSTEMS STUDIO: clientes, personas, campañas, biblioteca, plantillas y producción.
     Route::get('studio/{section}', function (string $section) {
         abort_unless(in_array($section, \App\Livewire\Creative\CreativeHub::SECTIONS, true), 404);
         return view('creative.index', compact('section'));
     })->name('studio.section');
 
-    Route::get('studio-personas-plantilla.csv', [CreativeCsvController::class, 'personasPlantilla'])
-        ->name('studio.personas.plantilla');
-    Route::get('studio-personas-exportar.csv', [CreativeCsvController::class, 'personasExportar'])
-        ->name('studio.personas.exportar');
-    Route::get('studio-generador-plantilla.csv', [CreativeCsvController::class, 'generadorPlantilla'])
-        ->name('studio.generador.plantilla');
+    Route::get('studio-personas-plantilla.csv', [CreativeCsvController::class, 'personasPlantilla'])->name('studio.personas.plantilla');
+    Route::get('studio-personas-exportar.csv', [CreativeCsvController::class, 'personasExportar'])->name('studio.personas.exportar');
+    Route::get('studio-generador-plantilla.csv', [CreativeCsvController::class, 'generadorPlantilla'])->name('studio.generador.plantilla');
 
-
-    // MIS RUTAS
     Route::get('images', [ImagesController::class, 'index'])->name('images');
     Route::get('images/optimizar', [ImagesController::class, 'optimizer'])->name('images.optimizer');
+    Route::get('images/redaccion-ia', [ImagesController::class, 'socialAi'])->name('images.social-ai');
+    Route::get('images/redaccion-ia/imagenes/{image}/preview', [SocialAiMediaController::class, 'preview'])->name('images.social-ai.preview');
 
-    // Carga progresiva: cada imagen viaja en una petición independiente y se procesa en cola.
     Route::prefix('images/optimizer-api')->name('images.optimizer.api.')->group(function () {
         Route::get('lote-activo', [ImageOptimizerBatchController::class, 'active'])->name('active');
         Route::post('lotes', [ImageOptimizerBatchController::class, 'store'])->name('store');
@@ -60,70 +55,42 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('lotes/{batch}', [ImageOptimizerBatchController::class, 'destroy'])->name('destroy');
     });
     Route::get('images/optimizar/{batch}/{type}/{filename}/preview', [ImageOptimizerController::class, 'preview'])
-        ->whereIn('type', ['originals', 'outputs'])
-        ->name('images.optimizer.preview');
-    Route::get('images/optimizar/{batch}/{filename}/descargar', [ImageOptimizerController::class, 'download'])
-        ->name('images.optimizer.download');
-    Route::get('images/optimizar/{batch}/descargar-zip', [ImageOptimizerController::class, 'downloadBatch'])
-        ->name('images.optimizer.download-batch');
+        ->whereIn('type', ['originals', 'outputs'])->name('images.optimizer.preview');
+    Route::get('images/optimizar/{batch}/{filename}/descargar', [ImageOptimizerController::class, 'download'])->name('images.optimizer.download');
+    Route::get('images/optimizar/{batch}/descargar-zip', [ImageOptimizerController::class, 'downloadBatch'])->name('images.optimizer.download-batch');
 
-    // MARCO DE IMAGENES
     Route::get('marcos', [ImagesController::class, 'marcos'])->name('marcos');
-
-    // RUTA RECONOCIMIENTO
     Route::get('reconocimiento', [ReconocimientoController::class, 'index'])->name('reconocimiento');
-
-    //CREDENCIAL
     Route::get('credenciales', [CredencialController::class, 'index'])->name('credencial');
 
-
-    // ETIQUETAS
     Route::get('etiquetas', [EtiquetaController::class, 'index'])->name('etiquetas');
     Route::get('etiquetas/excel/plantilla', [EtiquetaExcelController::class, 'plantilla'])->name('etiquetas.excel.plantilla');
     Route::get('etiquetas/excel/exportar', [EtiquetaExcelController::class, 'exportar'])->name('etiquetas.excel.exportar');
     Route::post('etiquetas/excel/exportar', [EtiquetaExcelController::class, 'exportar'])->name('etiquetas.excel.exportar.seleccionados');
     Route::post('etiquetas/pdf', [EtiquetaPdfController::class, 'generar'])->name('etiquetas.pdf');
 
-    // RECONOCIMIENTO EDITAR
     Route::get('reconocimiento/editar/{id}', [ReconocimientoController::class, 'editar'])->name('reconocimiento.editar');
-
     Route::get('reconocimiento/imagenes', [ReconocimientoController::class, 'imagenes'])->name('reconocimiento.imagenes');
-
-
     Route::get('descargar-reconocimientos', [PDFController::class, 'descargar_reconocimientos'])->name('descargar.reconocimientos');
     Route::get('descargar-reconocimientos-zip', [PDFController::class, 'descargar_reconocimientos_zip'])->name('descargar.reconocimientos.zip');
     Route::get('reconocimientos-exportar-csv', [PDFController::class, 'exportar_reconocimientos_csv'])->name('reconocimientos.exportar.csv');
     Route::get('reconocimientos-plantilla-csv', [PDFController::class, 'plantilla_importacion_csv'])->name('reconocimientos.plantilla.csv');
-
     Route::get('reconocimiento/{id}', [PDFController::class, 'reconocimiento'])->name('reconocimiento.pdf');
 
-
-    // CREDENCIALES
-    Route::get('/credenciales/{credencial}/pdf', [PDFController::class, 'credencialPdf'])
-        ->name('credenciales.pdf.individual');
-
-    Route::get('/credenciales/pdf/todas', [PDFController::class, 'credencialesPdfTodas'])
-        ->name('credenciales.pdf.todas');
-
-
-
-
+    Route::get('/credenciales/{credencial}/pdf', [PDFController::class, 'credencialPdf'])->name('credenciales.pdf.individual');
+    Route::get('/credenciales/pdf/todas', [PDFController::class, 'credencialesPdfTodas'])->name('credenciales.pdf.todas');
 
     Route::redirect('settings', 'settings/profile');
-
     Route::get('settings/profile', Profile::class)->name('settings.profile');
     Route::get('settings/password', Password::class)->name('settings.password');
     Route::get('settings/appearance', Appearance::class)->name('settings.appearance');
-
     Route::get('settings/two-factor', TwoFactor::class)
-        ->middleware(
-            when(
-                Features::canManageTwoFactorAuthentication()
-                && Features::optionEnabled(Features::twoFactorAuthentication(), 'confirmPassword'),
-                ['password.confirm'],
-                [],
-            ),
-        )
+        ->middleware(when(
+            Features::canManageTwoFactorAuthentication()
+            && Features::optionEnabled(Features::twoFactorAuthentication(), 'confirmPassword'),
+            ['password.confirm'],
+            [],
+        ))
         ->name('two-factor.show');
 });
 

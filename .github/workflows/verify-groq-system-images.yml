@@ -1,0 +1,56 @@
+name: Verify Groq System Images
+
+on:
+  push:
+    branches:
+      - feature/groq-system-images-v2
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      DB_CONNECTION: sqlite
+      DB_DATABASE: database/database.sqlite
+      CACHE_STORE: array
+      SESSION_DRIVER: array
+      QUEUE_CONNECTION: database
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, dom, fileinfo, gd, zip, pdo_sqlite
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Prepare Laravel
+        run: |
+          cp .env.example .env
+          touch database/database.sqlite
+          php artisan key:generate
+          php artisan migrate --force
+
+      - name: Check PHP syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            php -l "$file" >/dev/null
+          done < <(find app config database routes -type f -name '*.php' -print0)
+          echo "PHP syntax OK"
+
+      - name: Compile modified Blade views
+        run: |
+          php artisan tinker --execute="app('blade.compiler')->compileString(file_get_contents(resource_path('views/images/index.blade.php')));"
+          php artisan tinker --execute="app('blade.compiler')->compileString(file_get_contents(resource_path('views/components/tinymce-editor.blade.php')));"
+          php artisan tinker --execute="app('blade.compiler')->compileString(file_get_contents(resource_path('views/livewire/images/social-ai-composer.blade.php')));"
+
+      - name: Verify routes
+        run: php artisan route:list --name=images.social-ai

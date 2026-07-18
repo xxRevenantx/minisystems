@@ -30,6 +30,7 @@
         })"
         x-init="init()"
         x-on:reconocimiento-descripcion-actualizada.window="setContent($event.detail.html ?? '')"
+        x-on:social-copy-editor-updated.window="setContent($event.detail.html ?? '')"
         class="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm transition focus-within:border-[#006492] focus-within:ring-2 focus-within:ring-[#006492]/15 dark:border-zinc-700 dark:bg-zinc-900"
     >
         <flux:textarea
