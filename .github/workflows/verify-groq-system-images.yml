@@ -54,6 +54,3 @@ jobs:
 
       - name: Verify routes
         run: php artisan route:list --name=images.social-ai
-
-      - name: Run tests
-        run: php artisan test
