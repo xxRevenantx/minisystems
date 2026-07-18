@@ -26,4 +26,6 @@ class Marca extends Model
     public function proyectos() { return $this->hasMany(ProyectoCreativo::class); }
     public function archivos() { return $this->hasMany(ArchivoMultimedia::class); }
     public function plantillas() { return $this->hasMany(PlantillaCreativa::class); }
+    public function perfilSocial() { return $this->hasOne(MarcaSocialProfile::class); }
+    public function generacionesIa() { return $this->hasMany(AiSocialGeneration::class); }
 }
