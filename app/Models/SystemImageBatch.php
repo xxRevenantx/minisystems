@@ -22,6 +22,7 @@ class SystemImageBatch extends Model
         'bytes_uploaded',
         'zip_status',
         'zip_path',
+        'zip_parts',
         'zip_size',
         'zip_error',
         'started_at',
@@ -35,6 +36,7 @@ class SystemImageBatch extends Model
     {
         return [
             'settings' => 'array',
+            'zip_parts' => 'array',
             'started_at' => 'datetime',
             'processing_started_at' => 'datetime',
             'completed_at' => 'datetime',
