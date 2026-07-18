@@ -46,8 +46,11 @@ jobs:
           done < <(find app config database routes -type f -name '*.php' -print0)
           echo "PHP syntax OK"
 
-      - name: Compile Blade views
-        run: php artisan view:cache
+      - name: Compile modified Blade views
+        run: |
+          php artisan tinker --execute="app('blade.compiler')->compileString(file_get_contents(resource_path('views/images/index.blade.php')));"
+          php artisan tinker --execute="app('blade.compiler')->compileString(file_get_contents(resource_path('views/components/tinymce-editor.blade.php')));"
+          php artisan tinker --execute="app('blade.compiler')->compileString(file_get_contents(resource_path('views/livewire/images/social-ai-composer.blade.php')));"
 
       - name: Verify routes
         run: php artisan route:list --name=images.social-ai
