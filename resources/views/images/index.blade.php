@@ -38,7 +38,7 @@
         @elseif ($section === 'social-ai')
             <livewire:images.social-ai-composer />
         @else
-            <livewire:images.creacion-imagenes />
+            <livewire:images.creacion-imagenes-corregida />
         @endif
     </div>
 </x-layouts.app>
