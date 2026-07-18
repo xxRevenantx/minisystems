@@ -4,6 +4,7 @@
         'maxFiles' => $maxFiles,
         'maxFileMb' => $maxFileMb,
         'maxFileBytes' => (int) config('image_optimizer.max_file_kb', 20 * 1024) * 1024,
+        'uploadConcurrency' => $uploadConcurrency,
         'urls' => [
             'active' => route('images.optimizer.api.active'),
             'store' => route('images.optimizer.api.store'),
@@ -48,7 +49,7 @@
                 </span>
 
                 <h2 class="mt-4 text-3xl font-black tracking-tight sm:text-4xl">
-                    Optimiza hasta <?php echo e($maxFiles); ?> fotografías sin subir todo el peso de golpe
+                    Optimiza fotografías <?php echo e($maxFilesLabel); ?> sin subir todo el peso de golpe
                 </h2>
 
                 <p class="mt-3 max-w-2xl text-sm leading-6 text-emerald-50/95 sm:text-[15px]">
@@ -64,8 +65,8 @@
                 </div>
 
                 <div class="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur">
-                    <p class="text-[10px] font-black uppercase tracking-[.14em] text-emerald-100">Lote</p>
-                    <p class="mt-1 text-sm font-black">Hasta <?php echo e($maxFiles); ?> imágenes</p>
+                    <p class="text-[10px] font-black uppercase tracking-[.14em] text-emerald-100">Capacidad</p>
+                    <p class="mt-1 text-sm font-black"><?php echo e($maxFilesLabel); ?></p>
                 </div>
 
                 <div class="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur">
@@ -554,8 +555,8 @@
                         </h4>
 
                         <p class="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-500 dark:text-slate-400">
-                            JPG, PNG y WebP. Hasta <?php echo e($maxFileMb); ?> MB por archivo y <?php echo e($maxFiles); ?> imágenes por lote.
-                            El sistema envía una sola fotografía por petición.
+                            JPG, PNG y WebP. Hasta <?php echo e($maxFileMb); ?> MB por archivo y <?php echo e($maxFilesLabel); ?> de lote.
+                            El sistema sube progresivamente y divide las descargas en partes de hasta <?php echo e($zipPartMaxFiles); ?> imágenes o <?php echo e($zipPartMaxMb); ?> MB.
                         </p>
 
                         <div
@@ -652,14 +653,14 @@
                     </div>
 
                     <div class="flex flex-col gap-2 sm:flex-row">
-                        <a
-                            x-show="batch?.download_batch_url"
-                            x-cloak
-                            :href="batch?.download_batch_url"
-                            class="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-emerald-500/20 transition hover:from-emerald-700 hover:to-teal-700"
-                        >
-                            Descargar ZIP
-                        </a>
+                        <template x-if="(batch?.download_parts ?? []).length === 1">
+                            <a
+                                :href="batch.download_parts[0].url"
+                                class="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-emerald-500/20 transition hover:from-emerald-700 hover:to-teal-700"
+                            >
+                                Descargar ZIP
+                            </a>
+                        </template>
 
                         <button
                             type="button"
@@ -682,6 +683,35 @@
             </div>
 
             <div class="p-5 sm:p-7">
+                <div
+                    x-show="(batch?.download_parts ?? []).length > 1"
+                    x-cloak
+                    class="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900/50 dark:bg-emerald-950/20"
+                >
+                    <div class="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                        <div>
+                            <p class="text-sm font-black text-emerald-900 dark:text-emerald-200">Descargas por partes</p>
+                            <p class="mt-1 text-xs font-semibold leading-5 text-emerald-700 dark:text-emerald-300">
+                                Para evitar ZIPs pesados, el sistema divide las imágenes completadas en partes descargables.
+                            </p>
+                        </div>
+                        <span class="text-xs font-black text-emerald-700 dark:text-emerald-300">
+                            <span x-text="batch?.download_part_count ?? 0"></span> partes
+                        </span>
+                    </div>
+
+                    <div class="mt-3 flex flex-wrap gap-2">
+                        <template x-for="part in (batch?.download_parts ?? [])" :key="part.number">
+                            <a
+                                :href="part.url"
+                                class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-3 py-2 text-xs font-black text-white transition hover:bg-emerald-700"
+                            >
+                                <span x-text="`${part.label} · ${part.file_count} img · ${formatBytes(part.bytes)}`"></span>
+                            </a>
+                        </template>
+                    </div>
+                </div>
+
                 <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
                     <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-neutral-800 dark:bg-neutral-950/50">
                         <p class="text-[10px] font-black uppercase tracking-[.14em] text-slate-500">Recibidas</p>

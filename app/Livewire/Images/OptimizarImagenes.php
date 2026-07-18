@@ -166,11 +166,18 @@ class OptimizarImagenes extends Component
     {
         $profiles = $this->profiles();
 
+        $maxFiles = max(0, (int) config('image_optimizer.max_files', 0));
+
         return view('livewire.images.optimizar-imagenes', [
             'profiles' => $profiles,
             'selectedProfile' => $profiles[$this->profile] ?? $profiles['custom'],
-            'maxFiles' => (int) config('image_optimizer.max_files', 100),
+            'maxFiles' => $maxFiles,
+            'hasMaxFiles' => $maxFiles > 0,
+            'maxFilesLabel' => $maxFiles > 0 ? $maxFiles.' imágenes' : 'sin límite fijo',
             'maxFileMb' => round((int) config('image_optimizer.max_file_kb', 20 * 1024) / 1024),
+            'uploadConcurrency' => (int) config('image_optimizer.upload_concurrency', 2),
+            'zipPartMaxFiles' => (int) config('image_optimizer.zip_part_max_files', 100),
+            'zipPartMaxMb' => (int) config('image_optimizer.zip_part_max_mb', 500),
             'retentionHours' => (int) config('image_optimizer.retention_hours', 24),
         ]);
     }

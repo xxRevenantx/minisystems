@@ -6,6 +6,7 @@ use App\Jobs\ProcessSystemImage;
 use App\Models\SystemImageBatch;
 use App\Models\SystemImageItem;
 use App\Services\SystemImageBatchService;
+use App\Services\ZipPartPlanner;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -39,8 +40,13 @@ class SystemImageBatchController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $maxFiles = (int) config('system_images.max_files', 500);
+        $maxFiles = max(0, (int) config('system_images.max_files', 0));
         $maxFileKb = (int) config('system_images.max_file_kb', 20 * 1024);
+        $filesRule = ['required', 'array', 'min:1'];
+
+        if ($maxFiles > 0) {
+            $filesRule[] = 'max:'.$maxFiles;
+        }
 
         $data = $request->validate([
             'settings' => ['required', 'array'],
@@ -61,7 +67,7 @@ class SystemImageBatchController extends Controller
             'settings.desktop_height' => ['required', 'integer', 'between:320,6000'],
             'settings.mobile_width' => ['required', 'integer', 'between:320,6000'],
             'settings.mobile_height' => ['required', 'integer', 'between:320,6000'],
-            'files' => ['required', 'array', 'min:1', 'max:'.$maxFiles],
+            'files' => $filesRule,
             'files.*.fingerprint' => ['required', 'string', 'max:1000'],
             'files.*.name' => ['required', 'string', 'max:255'],
             'files.*.relative_path' => ['nullable', 'string', 'max:1000'],
@@ -370,6 +376,7 @@ class SystemImageBatchController extends Controller
         $reduction = $originalBytes > 0
             ? round((1 - ($processedBytes / $originalBytes)) * 100, 2)
             : 0.0;
+        $downloadParts = $this->downloadParts($batch);
 
         return [
             'uuid' => $batch->uuid,
@@ -392,11 +399,49 @@ class SystemImageBatchController extends Controller
             'created_at' => $batch->created_at?->toIso8601String(),
             'completed_at' => $batch->completed_at?->toIso8601String(),
             'expires_at' => $batch->expires_at?->toIso8601String(),
-            'download_batch_url' => $batch->completed_files > 0
-                ? route('images.system.download-batch', $batch->uuid)
-                : null,
+            'download_batch_url' => $downloadParts !== [] ? $downloadParts[0]['url'] : null,
+            'download_part_count' => count($downloadParts),
+            'download_parts' => $downloadParts,
             'items' => $items,
         ];
+    }
+
+    /** @return array<int,array{number:int,label:string,file_count:int,bytes:int,url:string}> */
+    private function downloadParts(SystemImageBatch $batch): array
+    {
+        $parts = app(ZipPartPlanner::class)->plan(
+            $this->downloadEntries($batch),
+            (int) config('system_images.zip_part_max_files', 100),
+            (int) config('system_images.zip_part_max_mb', 500) * 1024 * 1024,
+        );
+
+        return collect($parts)->map(function (array $part) use ($batch): array {
+            return [
+                'number' => $part['number'],
+                'label' => 'Parte '.str_pad((string) $part['number'], 2, '0', STR_PAD_LEFT),
+                'file_count' => $part['file_count'],
+                'bytes' => $part['bytes'],
+                'url' => route('images.system.download-batch', [
+                    'batch' => $batch->uuid,
+                    'part' => $part['number'],
+                ]),
+            ];
+        })->values()->all();
+    }
+
+    /** @return array<int,array{name:string,path:string,size:int}> */
+    private function downloadEntries(SystemImageBatch $batch): array
+    {
+        return $batch->items
+            ->where('status', 'completed')
+            ->filter(fn (SystemImageItem $item): bool => filled($item->output_path))
+            ->map(fn (SystemImageItem $item): array => [
+                'name' => $item->output_name ?: basename((string) $item->output_path),
+                'path' => (string) $item->output_path,
+                'size' => (int) ($item->processed_size ?? 0),
+            ])
+            ->values()
+            ->all();
     }
 
     private function ownedBatch(Request $request, string $uuid): SystemImageBatch

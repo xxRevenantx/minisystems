@@ -48,7 +48,7 @@
                     </span>
 
                     <h2 class="mt-4 text-3xl font-black tracking-tight sm:text-4xl">
-                        System Images para hasta {{ $maxFiles }} imágenes
+                        System Images {{ $maxFilesLabel }}
                     </h2>
 
                     <p class="mt-3 max-w-2xl text-sm leading-6 text-blue-50/95 sm:text-[15px]">
@@ -60,7 +60,7 @@
                 <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
                     <div class="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-center backdrop-blur">
                         <p class="text-[10px] font-extrabold uppercase tracking-[0.16em] text-blue-100">Capacidad</p>
-                        <p class="mt-1 text-sm font-black text-white">{{ $maxFiles }} imágenes</p>
+                        <p class="mt-1 text-sm font-black text-white">{{ $maxFilesLabel }}</p>
                     </div>
                     <div class="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-center backdrop-blur">
                         <p class="text-[10px] font-extrabold uppercase tracking-[0.16em] text-blue-100">Peso</p>
@@ -216,7 +216,7 @@
 
                         <h3 class="relative mt-6 text-2xl font-black tracking-tight text-slate-900 dark:text-white">Arrastra aquí tus imágenes</h3>
                         <p class="relative mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
-                            Puedes mezclar archivos horizontales, verticales y cuadrados. Para lotes grandes, selecciona una carpeta completa.
+                            Puedes mezclar archivos horizontales, verticales y cuadrados. Para lotes grandes, selecciona una carpeta completa; el sistema descargará por partes.
                         </p>
 
                         <div class="relative mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
@@ -231,7 +231,7 @@
                             </span>
                         </div>
 
-                        <p class="relative mt-4 text-xs text-slate-400 dark:text-slate-500">Hasta {{ $maxFiles }} archivos por lote · {{ $uploadConcurrency }} subida(s) simultánea(s)</p>
+                        <p class="relative mt-4 text-xs text-slate-400 dark:text-slate-500">Lote {{ $maxFilesLabel }} · {{ $uploadConcurrency }} subida(s) simultánea(s) · ZIPs de hasta {{ $zipPartMaxFiles }} imágenes o {{ $zipPartMaxMb }} MB</p>
                     </div>
 
                     <div class="rounded-[24px] border border-slate-200 bg-slate-50/70 p-5 dark:border-neutral-800 dark:bg-neutral-900/60">
@@ -285,12 +285,32 @@
                         </div>
 
                         <div class="mt-5 flex flex-col gap-2 sm:flex-row">
-                            <a x-show="batch?.download_batch_url" x-cloak :href="batch?.download_batch_url" class="inline-flex flex-1 items-center justify-center rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-black text-white shadow-sm transition hover:bg-emerald-700">
-                                Descargar ZIP
-                            </a>
+                            <template x-if="(batch?.download_parts ?? []).length === 1">
+                                <a :href="batch.download_parts[0].url" class="inline-flex flex-1 items-center justify-center rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-black text-white shadow-sm transition hover:bg-emerald-700">
+                                    Descargar ZIP
+                                </a>
+                            </template>
                             <button type="button" @click="newBatch()" class="inline-flex flex-1 items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-200 dark:hover:bg-neutral-900">
                                 Nuevo lote
                             </button>
+                        </div>
+
+                        <div
+                            x-show="(batch?.download_parts ?? []).length > 1"
+                            x-cloak
+                            class="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-900/60 dark:bg-emerald-950/25"
+                        >
+                            <p class="text-xs font-black text-emerald-900 dark:text-emerald-200">Descargas por partes</p>
+                            <p class="mt-1 text-[11px] leading-5 text-emerald-700 dark:text-emerald-300">
+                                Se generan enlaces pequeños para evitar un ZIP demasiado pesado.
+                            </p>
+                            <div class="mt-3 flex flex-wrap gap-2">
+                                <template x-for="part in (batch?.download_parts ?? [])" :key="part.number">
+                                    <a :href="part.url" class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-3 py-2 text-[11px] font-black text-white transition hover:bg-emerald-700">
+                                        <span x-text="`${part.label} · ${part.file_count} img · ${formatBytes(part.bytes)}`"></span>
+                                    </a>
+                                </template>
+                            </div>
                         </div>
 
                         <p class="mt-4 text-[11px] leading-5 text-slate-500 dark:text-slate-400">

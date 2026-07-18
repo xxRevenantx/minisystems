@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\SystemImageBatch;
 use App\Models\SystemImageItem;
 use App\Services\SimpleZipService;
+use App\Services\ZipPartPlanner;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -49,8 +50,40 @@ class SystemImageController extends Controller
     {
         $model = $this->ownedBatch($request, $batch);
         $disk = Storage::disk('local');
+        $entries = $this->downloadEntries($model, $disk);
 
-        $entries = $model->items()
+        abort_if($entries === [], 404, 'No hay imágenes procesadas disponibles en este lote.');
+
+        $parts = app(ZipPartPlanner::class)->plan(
+            $entries,
+            (int) config('system_images.zip_part_max_files', 100),
+            (int) config('system_images.zip_part_max_mb', 500) * 1024 * 1024,
+        );
+
+        $partNumber = max(1, (int) $request->query('part', 1));
+        $part = collect($parts)->firstWhere('number', $partNumber);
+
+        abort_unless($part, 404, 'La parte solicitada no existe para este lote.');
+
+        $temporaryPath = storage_path('app/private/system-images-zips/'.Str::uuid().'.zip');
+        $zipService->createFromStorage($temporaryPath, $disk, $part['entries']);
+
+        $suffix = count($parts) > 1
+            ? '-parte-'.str_pad((string) $part['number'], 3, '0', STR_PAD_LEFT)
+            : '';
+
+        return response()
+            ->download($temporaryPath, 'system-images'.$suffix.'-'.now()->format('Ymd-His').'.zip', [
+                'Content-Type' => 'application/zip',
+                'X-Content-Type-Options' => 'nosniff',
+            ])
+            ->deleteFileAfterSend(true);
+    }
+
+    /** @return array<int,array{name:string,path:string,size:int}> */
+    private function downloadEntries(SystemImageBatch $model, $disk): array
+    {
+        return $model->items()
             ->where('status', 'completed')
             ->whereNotNull('output_path')
             ->orderBy('position')
@@ -59,21 +92,10 @@ class SystemImageController extends Controller
             ->map(fn (SystemImageItem $item): array => [
                 'name' => $item->output_name ?: basename($item->output_path),
                 'path' => $item->output_path,
+                'size' => (int) ($item->processed_size ?? $disk->size($item->output_path)),
             ])
             ->values()
             ->all();
-
-        abort_if($entries === [], 404, 'No hay imágenes procesadas disponibles en este lote.');
-
-        $temporaryPath = storage_path('app/private/system-images-zips/'.Str::uuid().'.zip');
-        $zipService->createFromStorage($temporaryPath, $disk, $entries);
-
-        return response()
-            ->download($temporaryPath, 'system-images-'.now()->format('Ymd-His').'.zip', [
-                'Content-Type' => 'application/zip',
-                'X-Content-Type-Options' => 'nosniff',
-            ])
-            ->deleteFileAfterSend(true);
     }
 
     private function ownedItem(Request $request, string $batch, string $item): SystemImageItem

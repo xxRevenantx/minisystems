@@ -237,10 +237,10 @@ window.systemImagesUploader = (config) => ({
             return;
         }
 
-        if (images.length > config.maxFiles) {
+        if (this.hasMaxFiles() && images.length > Number(config.maxFiles)) {
             this.alert(
                 'El lote es demasiado grande',
-                `Seleccionaste ${images.length} imágenes. El máximo es ${config.maxFiles}.`,
+                `Seleccionaste ${images.length} imágenes. El máximo es ${Number(config.maxFiles).toLocaleString('es-MX')}.`,
             );
             return;
         }
@@ -418,7 +418,8 @@ window.systemImagesUploader = (config) => ({
     async uploadSequentially() {
         const pending = this.queue.filter((entry) => entry.itemUuid && entry.status !== 'uploaded');
         let cursor = 0;
-        const workers = Array.from({ length: Math.min(Number(config.uploadConcurrency || 1), pending.length || 1) }, async () => {
+        const concurrency = Math.max(1, Math.min(Number(config.uploadConcurrency || 1), pending.length || 1));
+        const workers = Array.from({ length: concurrency }, async () => {
             while (cursor < pending.length) {
                 const entry = pending[cursor++];
                 await this.uploadWithRetries(entry);
@@ -614,7 +615,7 @@ window.systemImagesUploader = (config) => ({
             });
 
             this.clearLocalState();
-            this.toast('success', 'Lote preparado', `Ya puedes seleccionar hasta ${config.maxFiles} imágenes nuevas.`);
+            this.toast('success', 'Lote preparado', `Ya puedes seleccionar más imágenes ${this.filesLimitLabel()}.`);
         } catch (error) {
             this.alert('No fue posible eliminar el lote', error.message);
         }
@@ -801,6 +802,16 @@ window.systemImagesUploader = (config) => ({
         return Object.entries(replacements).reduce((url, [key, value]) => {
             return url.replace(`__${key.toUpperCase()}__`, encodeURIComponent(value));
         }, template);
+    },
+
+    hasMaxFiles() {
+        return Number(config.maxFiles || 0) > 0;
+    },
+
+    filesLimitLabel() {
+        return this.hasMaxFiles()
+            ? `hasta ${Number(config.maxFiles).toLocaleString('es-MX')} imágenes`
+            : 'sin límite fijo';
     },
 
     isTerminal(status) {

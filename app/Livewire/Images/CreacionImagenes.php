@@ -48,7 +48,14 @@ class CreacionImagenes extends Component
     protected function rules(): array
     {
         return [
-            'images' => ['required', 'array', 'min:1', 'max:500'],
+            'images' => array_filter([
+                'required',
+                'array',
+                'min:1',
+                ((int) config('system_images.max_files', 0)) > 0
+                    ? 'max:'.(int) config('system_images.max_files', 0)
+                    : null,
+            ]),
             'images.*' => [
                 'required',
                 File::image()->types(['jpg', 'jpeg', 'png', 'webp'])->max(20 * 1024),
@@ -74,7 +81,7 @@ class CreacionImagenes extends Component
     {
         return [
             'images.required' => 'Selecciona al menos una imagen.',
-            'images.max' => 'Puedes procesar hasta 500 imágenes por lote.',
+            'images.max' => 'El lote superó el máximo configurado para System Images.',
             'images.*.max' => 'Cada imagen puede pesar hasta 20 MB.',
             'renamePattern.required' => 'Define el patrón de nombre de salida.',
         ];
@@ -176,7 +183,14 @@ class CreacionImagenes extends Component
     {
         if ($this->paso === 1) {
             $this->validate([
-                'images' => ['required', 'array', 'min:1', 'max:500'],
+                'images' => array_filter([
+                'required',
+                'array',
+                'min:1',
+                ((int) config('system_images.max_files', 0)) > 0
+                    ? 'max:'.(int) config('system_images.max_files', 0)
+                    : null,
+            ]),
                 'images.*' => [
                     'required',
                     File::image()->types(['jpg', 'jpeg', 'png', 'webp'])->max(20 * 1024),
@@ -720,14 +734,20 @@ class CreacionImagenes extends Component
 
     public function render()
     {
+        $maxFiles = max(0, (int) config('system_images.max_files', 0));
+
         return view('livewire.images.creacion-imagenes', [
             'marcos' => Marco::query()->where('activo', true)->orderBy('orden')->orderBy('nombre')->get(),
             'presetsSociales' => Schema::hasTable('presets_sociales')
                 ? PresetSocial::query()->where('activo', true)->orderBy('red_social')->orderBy('nombre')->get()
                 : collect(),
-            'maxFiles' => (int) config('system_images.max_files', 500),
+            'maxFiles' => $maxFiles,
+            'hasMaxFiles' => $maxFiles > 0,
+            'maxFilesLabel' => $maxFiles > 0 ? $maxFiles.' imágenes' : 'sin límite fijo',
             'maxFileMb' => round((int) config('system_images.max_file_kb', 20 * 1024) / 1024),
             'uploadConcurrency' => (int) config('system_images.upload_concurrency', 3),
+            'zipPartMaxFiles' => (int) config('system_images.zip_part_max_files', 100),
+            'zipPartMaxMb' => (int) config('system_images.zip_part_max_mb', 500),
             'retentionHours' => (int) config('system_images.retention_hours', 24),
         ]);
     }

@@ -6,6 +6,7 @@ use App\Jobs\ProcessImageOptimization;
 use App\Models\ImageOptimizerBatch;
 use App\Models\ImageOptimizerItem;
 use App\Services\ImageOptimizerBatchService;
+use App\Services\ZipPartPlanner;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -39,8 +40,13 @@ class ImageOptimizerBatchController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $maxFiles = (int) config('image_optimizer.max_files', 100);
+        $maxFiles = max(0, (int) config('image_optimizer.max_files', 0));
         $maxFileKb = (int) config('image_optimizer.max_file_kb', 20 * 1024);
+        $filesRule = ['required', 'array', 'min:1'];
+
+        if ($maxFiles > 0) {
+            $filesRule[] = 'max:'.$maxFiles;
+        }
 
         $data = $request->validate([
             'settings' => ['required', 'array'],
@@ -53,7 +59,7 @@ class ImageOptimizerBatchController extends Controller
             'settings.allow_upscale' => ['required', 'boolean'],
             'settings.preserve_transparency' => ['required', 'boolean'],
             'settings.rename_pattern' => ['required', 'string', 'max:100'],
-            'files' => ['required', 'array', 'min:1', 'max:'.$maxFiles],
+            'files' => $filesRule,
             'files.*.fingerprint' => ['required', 'string', 'max:1000'],
             'files.*.name' => ['required', 'string', 'max:255'],
             'files.*.relative_path' => ['nullable', 'string', 'max:1000'],
@@ -335,6 +341,7 @@ class ImageOptimizerBatchController extends Controller
         $reduction = $originalBytes > 0
             ? round((1 - ($optimizedBytes / $originalBytes)) * 100, 2)
             : 0.0;
+        $downloadParts = $this->downloadParts($batch);
 
         return [
             'uuid' => $batch->uuid,
@@ -357,11 +364,49 @@ class ImageOptimizerBatchController extends Controller
             'created_at' => $batch->created_at?->toIso8601String(),
             'completed_at' => $batch->completed_at?->toIso8601String(),
             'expires_at' => $batch->expires_at?->toIso8601String(),
-            'download_batch_url' => $batch->completed_files > 0
-                ? route('images.optimizer.download-batch', $batch->uuid)
-                : null,
+            'download_batch_url' => $downloadParts !== [] ? $downloadParts[0]['url'] : null,
+            'download_part_count' => count($downloadParts),
+            'download_parts' => $downloadParts,
             'items' => $items,
         ];
+    }
+
+    /** @return array<int,array{number:int,label:string,file_count:int,bytes:int,url:string}> */
+    private function downloadParts(ImageOptimizerBatch $batch): array
+    {
+        $parts = app(ZipPartPlanner::class)->plan(
+            $this->downloadEntries($batch),
+            (int) config('image_optimizer.zip_part_max_files', 100),
+            (int) config('image_optimizer.zip_part_max_mb', 500) * 1024 * 1024,
+        );
+
+        return collect($parts)->map(function (array $part) use ($batch): array {
+            return [
+                'number' => $part['number'],
+                'label' => 'Parte '.str_pad((string) $part['number'], 2, '0', STR_PAD_LEFT),
+                'file_count' => $part['file_count'],
+                'bytes' => $part['bytes'],
+                'url' => route('images.optimizer.download-batch', [
+                    'batch' => $batch->uuid,
+                    'part' => $part['number'],
+                ]),
+            ];
+        })->values()->all();
+    }
+
+    /** @return array<int,array{name:string,path:string,size:int}> */
+    private function downloadEntries(ImageOptimizerBatch $batch): array
+    {
+        return $batch->items
+            ->where('status', 'completed')
+            ->filter(fn (ImageOptimizerItem $item): bool => filled($item->output_path))
+            ->map(fn (ImageOptimizerItem $item): array => [
+                'name' => $item->output_name ?: basename((string) $item->output_path),
+                'path' => (string) $item->output_path,
+                'size' => (int) ($item->optimized_size ?? 0),
+            ])
+            ->values()
+            ->all();
     }
 
     private function ownedBatch(Request $request, string $uuid): ImageOptimizerBatch

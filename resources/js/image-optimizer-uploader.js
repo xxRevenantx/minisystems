@@ -232,10 +232,10 @@ window.imageOptimizerUploader = (config) => ({
             return;
         }
 
-        if (images.length > config.maxFiles) {
+        if (this.hasMaxFiles() && images.length > Number(config.maxFiles)) {
             this.alert(
                 'El lote es demasiado grande',
-                `Seleccionaste ${images.length} imágenes. El máximo es ${config.maxFiles}.`,
+                `Seleccionaste ${images.length} imágenes. El máximo es ${Number(config.maxFiles).toLocaleString('es-MX')}.`,
             );
             return;
         }
@@ -411,11 +411,17 @@ window.imageOptimizerUploader = (config) => ({
     },
 
     async uploadSequentially() {
-        for (const entry of this.queue) {
-            if (!entry.itemUuid || entry.status === 'uploaded') continue;
-            await this.uploadWithRetries(entry);
-        }
+        const pending = this.queue.filter((entry) => entry.itemUuid && entry.status !== 'uploaded');
+        let cursor = 0;
+        const concurrency = Math.max(1, Math.min(Number(config.uploadConcurrency || 1), pending.length || 1));
+        const workers = Array.from({ length: concurrency }, async () => {
+            while (cursor < pending.length) {
+                const entry = pending[cursor++];
+                await this.uploadWithRetries(entry);
+            }
+        });
 
+        await Promise.all(workers);
         await this.refreshBatch(false);
     },
 
@@ -604,7 +610,7 @@ window.imageOptimizerUploader = (config) => ({
             });
 
             this.clearLocalState();
-            this.toast('success', 'Lote preparado', 'Ya puedes seleccionar hasta 100 imágenes nuevas.');
+            this.toast('success', 'Lote preparado', `Ya puedes seleccionar más imágenes ${this.filesLimitLabel()}.`);
         } catch (error) {
             this.alert('No fue posible eliminar el lote', error.message);
         }
@@ -791,6 +797,16 @@ window.imageOptimizerUploader = (config) => ({
         return Object.entries(replacements).reduce((url, [key, value]) => {
             return url.replace(`__${key.toUpperCase()}__`, encodeURIComponent(value));
         }, template);
+    },
+
+    hasMaxFiles() {
+        return Number(config.maxFiles || 0) > 0;
+    },
+
+    filesLimitLabel() {
+        return this.hasMaxFiles()
+            ? `hasta ${Number(config.maxFiles).toLocaleString('es-MX')} imágenes`
+            : 'sin límite fijo';
     },
 
     isTerminal(status) {
