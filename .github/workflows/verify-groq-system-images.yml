@@ -9,6 +9,12 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    env:
+      DB_CONNECTION: sqlite
+      DB_DATABASE: database/database.sqlite
+      CACHE_STORE: array
+      SESSION_DRIVER: array
+      QUEUE_CONNECTION: database
 
     steps:
       - name: Checkout
