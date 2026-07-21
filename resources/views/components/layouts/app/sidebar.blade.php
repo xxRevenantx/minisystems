@@ -115,6 +115,13 @@
                         {{ __('Optimizar imágenes') }}
                     </flux:navlist.item>
 
+                    @if (auth()->user()?->puedePdf('ver'))
+                        <flux:navlist.item icon="document-duplicate" :href="route('system-pdf')"
+                            :current="request()->routeIs('system-pdf*')" wire:navigate>
+                            {{ __('System PDF') }}
+                        </flux:navlist.item>
+                    @endif
+
                 </flux:navlist.group>
             </flux:navlist.group>
         </flux:navlist>

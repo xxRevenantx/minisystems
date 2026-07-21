@@ -9,6 +9,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use App\Models\ReconocimientoPermiso;
+use App\Models\PdfPermiso;
 
 class User extends Authenticatable
 {
@@ -80,6 +81,16 @@ class User extends Authenticatable
                     'administrar' => $esAdministradorPrincipal,
                 ]);
             }
+
+            if (\Illuminate\Support\Facades\Schema::hasTable('pdf_permisos')) {
+                $user->permisoPdf()->create([
+                    'ver' => true,
+                    'procesar' => $esAdministradorPrincipal,
+                    'descargar' => true,
+                    'eliminar' => $esAdministradorPrincipal,
+                    'administrar' => $esAdministradorPrincipal,
+                ]);
+            }
         });
     }
 
@@ -123,6 +134,29 @@ class User extends Authenticatable
         $permiso = $this->relationLoaded('permisoEtiquetas')
             ? $this->permisoEtiquetas
             : $this->permisoEtiquetas()->first();
+
+        return $permiso ? (bool) ($permiso->{$accion} ?? false) : false;
+    }
+
+
+    public function permisoPdf()
+    {
+        return $this->hasOne(PdfPermiso::class);
+    }
+
+    public function puedePdf(string $accion): bool
+    {
+        if (! \Illuminate\Support\Facades\Schema::hasTable('pdf_permisos')) {
+            return false;
+        }
+
+        if ((int) $this->getKey() === 1) {
+            return true;
+        }
+
+        $permiso = $this->relationLoaded('permisoPdf')
+            ? $this->permisoPdf
+            : $this->permisoPdf()->first();
 
         return $permiso ? (bool) ($permiso->{$accion} ?? false) : false;
     }

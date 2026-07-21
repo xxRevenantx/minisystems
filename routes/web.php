@@ -20,6 +20,9 @@ use App\Http\Controllers\ValidationController;
 use App\Http\Controllers\EtiquetaController;
 use App\Http\Controllers\EtiquetaExcelController;
 use App\Http\Controllers\EtiquetaPdfController;
+use App\Http\Controllers\SystemPdfController;
+use App\Http\Controllers\SystemPdfBatchController;
+use App\Http\Controllers\SystemPdfPermissionController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -73,6 +76,27 @@ Route::middleware(['auth'])->group(function () {
         ->whereIn('type', ['originals', 'outputs'])->name('images.optimizer.preview');
     Route::get('images/optimizar/{batch}/{filename}/descargar', [ImageOptimizerController::class, 'download'])->name('images.optimizer.download');
     Route::get('images/optimizar/{batch}/descargar-zip', [ImageOptimizerController::class, 'downloadBatch'])->name('images.optimizer.download-batch');
+
+    Route::get('system-pdf', [SystemPdfController::class, 'index'])->name('system-pdf');
+    Route::prefix('system-pdf/api')->name('system-pdf.api.')->group(function () {
+        Route::get('lote-activo', [SystemPdfBatchController::class, 'active'])->name('active');
+        Route::get('historial', [SystemPdfBatchController::class, 'history'])->name('history');
+        Route::get('permisos', [SystemPdfPermissionController::class, 'index'])->name('permissions');
+        Route::patch('permisos/{user}', [SystemPdfPermissionController::class, 'update'])->name('permissions.update');
+        Route::post('lotes', [SystemPdfBatchController::class, 'store'])->name('store');
+        Route::get('lotes/{batch}', [SystemPdfBatchController::class, 'show'])->name('show');
+        Route::post('lotes/{batch}/archivos/{item}', [SystemPdfBatchController::class, 'upload'])->name('upload');
+        Route::post('lotes/{batch}/archivos/{item}/contrasena', [SystemPdfBatchController::class, 'password'])->name('password');
+        Route::post('lotes/{batch}/iniciar', [SystemPdfBatchController::class, 'start'])->name('start');
+        Route::post('lotes/{batch}/archivos/{item}/reintentar', [SystemPdfBatchController::class, 'retry'])->name('retry');
+        Route::delete('lotes/{batch}', [SystemPdfBatchController::class, 'destroy'])->name('destroy');
+    });
+    Route::get('system-pdf/{batch}/archivos/{item}/miniatura/{page}', [SystemPdfController::class, 'thumbnail'])->name('system-pdf.thumbnail');
+    Route::get('system-pdf/{batch}/archivos/{item}/vista', [SystemPdfController::class, 'sourcePreview'])->name('system-pdf.source-preview');
+    Route::get('system-pdf/{batch}/archivos/{item}/descargar', [SystemPdfController::class, 'downloadItem'])->name('system-pdf.download-item');
+    Route::get('system-pdf/{batch}/archivos/{item}/resultados/{result}', [SystemPdfController::class, 'downloadResult'])->name('system-pdf.download-result');
+    Route::get('system-pdf/{batch}/descargar', [SystemPdfController::class, 'downloadBatchOutput'])->name('system-pdf.download-output');
+    Route::get('system-pdf/{batch}/descargar-zip', [SystemPdfController::class, 'downloadZip'])->name('system-pdf.download-zip');
 
     Route::get('marcos', [ImagesController::class, 'marcos'])->name('marcos');
     Route::get('reconocimiento', [ReconocimientoController::class, 'index'])->name('reconocimiento');

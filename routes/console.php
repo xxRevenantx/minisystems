@@ -9,3 +9,5 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('images:cleanup-optimizer')->hourly()->withoutOverlapping();
+
+Schedule::command('system-pdf:cleanup')->hourly()->withoutOverlapping();
