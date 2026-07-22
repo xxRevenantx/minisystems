@@ -20,6 +20,7 @@
 <?php $component->withAttributes(['title' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(__('System PDF'))]); ?>
     <div
         x-data="systemPdfManager(<?php echo \Illuminate\Support\Js::from([
+            'csrf' => csrf_token(),
             'maxFiles' => $maxFiles,
             'maxFileMb' => $maxFileMb,
             'uploadConcurrency' => $uploadConcurrency,

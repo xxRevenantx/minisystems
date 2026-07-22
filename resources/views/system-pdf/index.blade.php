@@ -11,6 +11,7 @@
 <x-layouts.app :title="__('System PDF')">
     <div
         x-data="systemPdfManager(@js([
+            'csrf' => csrf_token(),
             'maxFiles' => $maxFiles,
             'maxFileMb' => $maxFileMb,
             'uploadConcurrency' => $uploadConcurrency,

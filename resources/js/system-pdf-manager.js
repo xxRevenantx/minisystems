@@ -609,11 +609,27 @@ window.systemPdfManager = (config) => ({
     },
 
     async request(url, options = {}) {
-        const headers = { Accept: 'application/json' };
-        if (!options.isForm) headers['Content-Type'] = 'application/json';
-        const token = document.querySelector('meta[name="csrf-token"]')?.content;
-        if (token) headers['X-CSRF-TOKEN'] = token;
-        const response = await fetch(url, { credentials: 'same-origin', ...options, headers: { ...headers, ...(options.headers || {}) } });
+        const method = String(options.method || 'GET').toUpperCase();
+        const headers = {
+            Accept: 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        };
+
+        if (!options.isForm && options.body !== undefined) {
+            headers['Content-Type'] = 'application/json';
+        }
+
+        const token = config.csrf || document.querySelector('meta[name="csrf-token"]')?.content;
+        if (token && !['GET', 'HEAD'].includes(method)) {
+            headers['X-CSRF-TOKEN'] = token;
+        }
+
+        const response = await fetch(url, {
+            credentials: 'same-origin',
+            ...options,
+            method,
+            headers: { ...headers, ...(options.headers || {}) },
+        });
         let payload = {};
         try { payload = await response.json(); } catch (_) { payload = {}; }
         if (!response.ok) {
