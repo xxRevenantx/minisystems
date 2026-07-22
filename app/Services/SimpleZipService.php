@@ -126,10 +126,21 @@ class SimpleZipService
     private function safeEntryName(string $name): string
     {
         $name = str_replace('\\', '/', $name);
-        $name = basename($name);
         $name = preg_replace('/[\x00-\x1F\x7F]/u', '', $name) ?: 'imagen';
+        $segments = array_values(array_filter(explode('/', $name), function (string $segment): bool {
+            return $segment !== '' && $segment !== '.' && $segment !== '..';
+        }));
 
-        return substr($name, 0, 180);
+        $safeSegments = array_map(function (string $segment): string {
+            $segment = preg_replace('/[^a-zA-Z0-9._ -]/u', '_', $segment) ?: 'archivo';
+            $segment = trim($segment, ' .');
+
+            return substr($segment !== '' ? $segment : 'archivo', 0, 120);
+        }, $segments);
+
+        $safeName = implode('/', $safeSegments);
+
+        return substr($safeName !== '' ? $safeName : 'imagen', 0, 220);
     }
 
     /** @return array{0:int,1:int} */

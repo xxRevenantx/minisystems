@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ImageOptimizerBatch;
 use App\Services\SimpleZipService;
+use App\Services\ZipPartPlanner;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -44,30 +45,52 @@ class ImageOptimizerController extends Controller
     {
         $model = $this->ownedBatch($request, $batch);
         $disk = Storage::disk('local');
-        $basePath = $model->basePath().'/outputs';
-        $files = $disk->files($basePath);
-        abort_if($files === [], 404, 'No hay imágenes optimizadas disponibles en este lote.');
+        $entries = $this->downloadEntries($model, $disk);
 
-        $entries = collect($files)
-            ->filter(fn (string $path): bool => $disk->exists($path))
-            ->map(fn (string $path): array => [
-                'name' => basename($path),
-                'path' => $path,
-            ])
-            ->values()
-            ->all();
+        abort_if($entries === [], 404, 'No hay imágenes optimizadas disponibles en este lote.');
 
-        abort_if($entries === [], 404, 'Los archivos de este lote ya no están disponibles.');
+        $parts = app(ZipPartPlanner::class)->plan(
+            $entries,
+            (int) config('image_optimizer.zip_part_max_files', 100),
+            (int) config('image_optimizer.zip_part_max_mb', 500) * 1024 * 1024,
+        );
+
+        $partNumber = max(1, (int) $request->query('part', 1));
+        $part = collect($parts)->firstWhere('number', $partNumber);
+
+        abort_unless($part, 404, 'La parte solicitada no existe para este lote.');
 
         $temporaryPath = storage_path('app/private/image-optimizer-zips/'.Str::uuid().'.zip');
-        $zipService->createFromStorage($temporaryPath, $disk, $entries);
+        $zipService->createFromStorage($temporaryPath, $disk, $part['entries']);
+
+        $suffix = count($parts) > 1
+            ? '-parte-'.str_pad((string) $part['number'], 3, '0', STR_PAD_LEFT)
+            : '';
 
         return response()
-            ->download($temporaryPath, 'imagenes-optimizadas-'.now()->format('Ymd-His').'.zip', [
+            ->download($temporaryPath, 'imagenes-optimizadas'.$suffix.'-'.now()->format('Ymd-His').'.zip', [
                 'Content-Type' => 'application/zip',
                 'X-Content-Type-Options' => 'nosniff',
             ])
             ->deleteFileAfterSend(true);
+    }
+
+    /** @return array<int,array{name:string,path:string,size:int}> */
+    private function downloadEntries(ImageOptimizerBatch $model, $disk): array
+    {
+        return $model->items()
+            ->where('status', 'completed')
+            ->whereNotNull('output_path')
+            ->orderBy('position')
+            ->get()
+            ->filter(fn ($item): bool => $item->output_path && $disk->exists($item->output_path))
+            ->map(fn ($item): array => [
+                'name' => $item->output_name ?: basename($item->output_path),
+                'path' => $item->output_path,
+                'size' => (int) ($item->optimized_size ?? $disk->size($item->output_path)),
+            ])
+            ->values()
+            ->all();
     }
 
     private function authorizedPath(Request $request, string $batch, string $type, string $filename): string

@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\ImageOptimizerBatch;
+use App\Models\SystemImageBatch;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Schema;
@@ -12,7 +13,7 @@ class CleanupImageOptimizer extends Command
 {
     protected $signature = 'images:cleanup-optimizer';
 
-    protected $description = 'Elimina lotes, originales y ZIP temporales vencidos del optimizador de imágenes';
+    protected $description = 'Elimina lotes, originales y ZIP temporales vencidos de imágenes';
 
     public function handle(): int
     {
@@ -22,6 +23,20 @@ class CleanupImageOptimizer extends Command
 
         if (Schema::hasTable('image_optimizer_batches')) {
             ImageOptimizerBatch::query()
+                ->where('expires_at', '<=', now())
+                ->orderBy('id')
+                ->chunkById(100, function ($batches) use ($disk, &$deletedBatches): void {
+                    foreach ($batches as $batch) {
+                        $disk->deleteDirectory($batch->basePath());
+                        $batch->delete();
+                        $deletedBatches++;
+                    }
+                });
+        }
+
+
+        if (Schema::hasTable('system_image_batches')) {
+            SystemImageBatch::query()
                 ->where('expires_at', '<=', now())
                 ->orderBy('id')
                 ->chunkById(100, function ($batches) use ($disk, &$deletedBatches): void {
@@ -48,6 +63,18 @@ class CleanupImageOptimizer extends Command
         }
 
         foreach ($disk->files('image-optimizer-zips') as $zipPath) {
+            try {
+                if ($disk->lastModified($zipPath) < now()->subDay()->timestamp) {
+                    $disk->delete($zipPath);
+                    $deletedZips++;
+                }
+            } catch (\Throwable) {
+                // Un ZIP dañado no debe detener la limpieza.
+            }
+        }
+
+
+        foreach ($disk->files('system-images-zips') as $zipPath) {
             try {
                 if ($disk->lastModified($zipPath) < now()->subDay()->timestamp) {
                     $disk->delete($zipPath);

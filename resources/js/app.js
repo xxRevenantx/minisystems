@@ -1,4 +1,6 @@
+import './system-pdf-manager';
 import './image-optimizer-uploader';
+import './system-images-uploader';
 
 /**
  * Comportamiento de la biblioteca de diseños de reconocimientos.
